@@ -12,5 +12,8 @@ export async function POST(request: NextRequest) {
   }
 
   revalidatePath('/', 'layout')
-  return NextResponse.redirect(new URL('/login', request.url))
+  // Remove the 'role' cookie on signout
+  const response = NextResponse.redirect(new URL('/login', request.url))
+  response.cookies.set({ name: 'role', value: '', path: '/', expires: new Date(0) })
+  return response
 }

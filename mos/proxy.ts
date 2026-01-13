@@ -1,5 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getLoggedInUser } from './utils/getLoggedInUser'
+
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
@@ -54,8 +56,17 @@ export async function proxy(request: NextRequest) {
     }
   )
 
+
   // Refresh session if expired - required for Server Components
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // If user is authenticated, fetch their role and set it as a cookie
+  if (user) {
+    const loggedUser = await getLoggedInUser()
+    if (loggedUser?.role) {
+      response.cookies.set('role', loggedUser.role, { path: '/' })
+    }
+  }
 
   return response
 }

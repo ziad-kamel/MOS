@@ -15,11 +15,12 @@ export default async function Page() {
 
   return (
     <div>
-      <h1>Welcome, {user.email}</h1>
+      <h1>Welcome, {user.user_metadata.full_name}</h1>
       <form action="/auth/signout" method="post">
         <button type="submit">Sign Out</button>
       </form>
 
+      <a href="/home">home</a>
       
     </div>
   )
