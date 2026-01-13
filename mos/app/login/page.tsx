@@ -54,6 +54,9 @@ export default function Login() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
+    options:{
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+    }
     })
 
     if (error) {
@@ -64,6 +67,8 @@ export default function Login() {
 
     setLoading(false)
   }
+
+  
 
   return (
     <div className="flex min-h-screen items-center justify-center">

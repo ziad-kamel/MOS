@@ -1,3 +1,4 @@
+import prisma from '@/lib/prisma'
 import { createClient } from '@/utils/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -9,8 +10,28 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data,error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      // after successful login, check if user exists in database, if not create it with a role
+      await prisma.user.findUnique({
+        where: {
+          id: data.user.id,
+        },
+        select: {
+          id: true,
+        },
+      }).then(async (existingUser) => {
+        if (!existingUser) {
+          await prisma.user.create({
+            data: {
+              id: data.user.id,
+              email: data.user.email!,
+              name: data.user.user_metadata.full_name,
+            },
+          })
+        }
+      })
+
       const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
       const isLocalEnv = process.env.NODE_ENV === 'development'
       if (isLocalEnv) {
