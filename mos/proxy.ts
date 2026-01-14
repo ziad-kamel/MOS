@@ -66,6 +66,10 @@ export async function proxy(request: NextRequest) {
     if (loggedUser?.role) {
       response.cookies.set('role', loggedUser.role, { path: '/' })
     }
+  } else {
+const url = request.nextUrl.clone()
+  url.pathname = '/login'
+  return NextResponse.rewrite(url)
   }
 
   return response
@@ -80,6 +84,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
