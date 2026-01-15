@@ -12,15 +12,15 @@ export async function getLoggedInUser(): Promise< {supaUser: User, dbUser: UserM
       id: user?.id,
     },
   });
-
   if (!loggedInUser) {
-    await prisma.user.create({
+    const createdUser = await prisma.user.create({
       data: {
         id: user?.id!,
         email: user?.email!,
-        name: user?.user_metadata.full_name || 'No Name',
+        name: user?.user_metadata.full_name,
       },
     });
+    return {supaUser: user!, dbUser: createdUser!}
   }
 
   return {supaUser: user!, dbUser: loggedInUser!};

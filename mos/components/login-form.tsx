@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { createClient } from '@/utils/supabase/client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from "next/link"
 
 export function LoginForm({
   className,
@@ -66,27 +67,6 @@ export function LoginForm({
       setLoading(false)
     }
   
-    const handleSignUp = async (e: React.FormEvent) => {
-      e.preventDefault()
-      setLoading(true)
-  
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      options:{
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-      }
-      })
-  
-      if (error) {
-        alert(error.message)
-      } else {
-        alert('Check your email for the confirmation link!')
-      }
-  
-      setLoading(false)
-    }
-  
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -129,7 +109,7 @@ export function LoginForm({
                   {loading ? 'Loading...' : 'Sign in with Google'}
                 </Button>
                 <FieldDescription className="text-center">
-                  Don&apos;t have an account? <a onClick={handleSignUp} href="#">Sign up</a>
+                  Don&apos;t have an account? <Link href={'/signup'}>Sign up</Link>
                 </FieldDescription>
               </Field>
             </FieldGroup>

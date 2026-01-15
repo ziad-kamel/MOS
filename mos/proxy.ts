@@ -62,7 +62,7 @@ export async function proxy(request: NextRequest) {
 
   // If user is authenticated, fetch their role and set it as a cookie
   if (user) {
-    const loggedUser = await getLoggedInUser()
+    const loggedUser = await getLoggedInUser()    
     if (loggedUser?.dbUser.role) {
       response.cookies.set('role', loggedUser.dbUser.role, { path: '/' })
     }
@@ -84,6 +84,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|auth|signup|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
