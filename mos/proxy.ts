@@ -63,8 +63,8 @@ export async function proxy(request: NextRequest) {
   // If user is authenticated, fetch their role and set it as a cookie
   if (user) {
     const loggedUser = await getLoggedInUser()
-    if (loggedUser?.role) {
-      response.cookies.set('role', loggedUser.role, { path: '/' })
+    if (loggedUser?.dbUser.role) {
+      response.cookies.set('role', loggedUser.dbUser.role, { path: '/' })
     }
   } else {
 const url = request.nextUrl.clone()

@@ -1,7 +1,8 @@
 import prisma from '../lib/prisma'
 import { UserModel} from '@/app/generated/prisma/models/User'
 import { createClient } from './supabase/server'
-export async function getLoggedInUser(): Promise< UserModel | null> {
+import { User } from '@supabase/supabase-js'
+export async function getLoggedInUser(): Promise< {supaUser: User, dbUser: UserModel}> {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,5 +23,5 @@ export async function getLoggedInUser(): Promise< UserModel | null> {
     });
   }
 
-  return loggedInUser || null;
+  return {supaUser: user!, dbUser: loggedInUser!};
 }

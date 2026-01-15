@@ -35,7 +35,7 @@ export function AppSidebar({user}:{user:User}) {
   
   const data = {
     user: {
-      name: user?.user_metadata.full_name || "shadcn",
+      name: user?.user_metadata.full_name || "No Name",
       email: user?.email || "m@example.com",
       avatar: user?.user_metadata.avatar_url || ''
     },
