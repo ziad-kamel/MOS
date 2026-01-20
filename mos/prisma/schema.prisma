@@ -8,20 +8,19 @@ datasource db {
 }
 
 model User {
-  id        String   @id @db.Uuid
+  id        String   @id @db.Uuid @default(uuid())
   email     String   @unique
-  role      Role     @default(USER)
-  name      String?
+  role      UserRole     @default(BRAND)
+  companyName String
+  contactInfo Json?
+  capabilities String[] @default([])
+  isActive Boolean?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@map("users")
 }
 
-enum Role {
+enum UserRole {
+  BRAND
+  MANUFACTURER
   ADMIN
-  MODERATOR
-  BOWNER
-  MOWNER
-  USER
 }
