@@ -10,15 +10,23 @@ import {
 } from "@/components/ui/card";
 import {
   Field,
-  FieldDescription,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/utils/supabase/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { UserRole } from "@/app/generated/prisma/enums";
+import { useUser } from "./UserProvider";
 
 export function WelcomeForm({
   className,
@@ -29,17 +37,13 @@ export function WelcomeForm({
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [contactPerson, setcontactPerson] = useState("");
+  const UserRole: UserRole[] = ["ADMIN", "BRAND", "MANUFACTURER"];
 
   const [loading, setLoading] = useState(false);
-
+  const { user } = useUser();
   const router = useRouter();
-  const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
-      const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
     e.preventDefault();
     setLoading(true);
 
@@ -47,18 +51,19 @@ export function WelcomeForm({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        email:user?.email,
-        role:role,
-        companyName:companyName,
-        contactInfo:{
+        email: user.supaUser?.email,
+        role: role,
+        companyName: companyName,
+        contactInfo: {
           phone: phone,
-          address:address,
-          contactPerson:contactPerson
-        }
+          address: address,
+          contactPerson: contactPerson,
+        },
       }),
+    }).then(() => {
+      alert("done");
+      router.push("/profile");
     });
-    
-    router.push('/home')
 
     setLoading(false);
   };
@@ -67,9 +72,9 @@ export function WelcomeForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>Login to your account</CardTitle>
+          <CardTitle>Complete Profile</CardTitle>
           <CardDescription>
-            Enter your role below to login to your account
+            Please complete the fields to use the platform
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -77,21 +82,29 @@ export function WelcomeForm({
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor='role'>Role</FieldLabel>
-                <Input
-                  id='role'
-                  type='text'
-                  placeholder='m@example.com'
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  required
-                />
+
+                <Select value={role} onValueChange={setRole}>
+                  <SelectTrigger className='w-45'>
+                    <SelectValue placeholder={`Select a Role`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>{role}</SelectLabel>
+                      {UserRole.map((role, index) => (
+                        <SelectItem key={index} value={role}>
+                          {role}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </Field>
               <Field>
                 <FieldLabel htmlFor='companyName'>Company Name</FieldLabel>
                 <Input
                   id='companyName'
                   type='text'
-                  placeholder='m@example.com'
+                  placeholder='MOS.dev'
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   required
@@ -104,7 +117,7 @@ export function WelcomeForm({
                   <Input
                     id='phone'
                     type='tel'
-                    placeholder='m@example.com'
+                    placeholder='01xxxxxxxxx'
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     required
@@ -115,7 +128,7 @@ export function WelcomeForm({
                   <Input
                     id='address'
                     type='text'
-                    placeholder='m@example.com'
+                    placeholder='10 example st, city'
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     required
@@ -126,7 +139,7 @@ export function WelcomeForm({
                   <Input
                     id='contactPerson'
                     type='text'
-                    placeholder='m@example.com'
+                    placeholder='Name of company holder'
                     value={contactPerson}
                     onChange={(e) => setcontactPerson(e.target.value)}
                     required

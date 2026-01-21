@@ -28,16 +28,17 @@ import {
 } from "@/components/ui/sidebar"
 import { ThemeToggle } from "./ThemeToogleBtn/ThemeToogleBtn"
 import { User } from "@supabase/supabase-js"
+import { useUser } from "./UserProvider"
 
 // This is sample data.
 
-export function AppSidebar({user}:{user:User}) {
-  
+export function AppSidebar() {
+  const {user} = useUser();
   const data = {
     user: {
-      name: user?.user_metadata.full_name || "No Name",
-      email: user?.email || "m@example.com",
-      avatar: user?.user_metadata.avatar_url || ''
+      name: user?.supaUser.user_metadata.full_name || "No Name",
+      email: user?.supaUser.email || "m@example.com",
+      avatar: user?.supaUser.user_metadata.avatar_url || ''
     },
     teams: [
       {
