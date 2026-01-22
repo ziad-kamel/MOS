@@ -1,5 +1,4 @@
 import { WelcomeForm } from '@/components/welcom-form'
-import React from 'react'
 
 export default function welcome() {
   return (

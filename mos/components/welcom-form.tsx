@@ -37,7 +37,7 @@ export function WelcomeForm({
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [contactPerson, setcontactPerson] = useState("");
-  const UserRole: UserRole[] = ["ADMIN", "BRAND", "MANUFACTURER"];
+  const UserRole: UserRole[] = ["BRAND", "MANUFACTURER"];
 
   const [loading, setLoading] = useState(false);
   const { user } = useUser();
@@ -47,7 +47,7 @@ export function WelcomeForm({
     e.preventDefault();
     setLoading(true);
 
-    const addedUser = await fetch("http://localhost:3000/welcome/api/", {
+    const addedUser = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
