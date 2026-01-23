@@ -36,15 +36,16 @@ export function AppSidebar() {
   const {user} = useUser();
   const data = {
     user: {
-      name: user?.supaUser.user_metadata.full_name || "No Name",
-      email: user?.supaUser.email || "m@example.com",
-      avatar: user?.supaUser.user_metadata.avatar_url || ''
+      name: user.dbUser?.contactInfo?.contactPerson || "No Name",
+      email: user.supaUser!.email || "m@example.com",
+      avatar: user.supaUser!.user_metadata.avatar_url || '/icon.jpg',
+      role: user.dbUser!.role
     },
     teams: [
       {
         name: "Khonsu.MOS",
         logo: MoonIcon,
-        plan: "",
+        role: user.dbUser?.role || 'BRAND',
       },
     ],
     navMain: [

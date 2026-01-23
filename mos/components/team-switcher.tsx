@@ -13,6 +13,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { UserRole } from "@/app/generated/prisma/enums"
 
 export function TeamSwitcher({
   teams,
@@ -20,7 +21,7 @@ export function TeamSwitcher({
   teams: {
     name: string
     logo: React.ElementType
-    plan: string
+    role: UserRole
   }[]
 }) {
   const { isMobile } = useSidebar()

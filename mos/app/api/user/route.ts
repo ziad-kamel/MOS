@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { updateUserSchema } from "@/lib/schemas";
 
 export async function POST(request: NextRequest) {
   const authUser = await getCurrentUser();
@@ -71,10 +72,11 @@ export async function PUT(request: NextRequest) {
     if (!authUser) {
       throw new Error("user not auhed");
     } else {
-      const { email, companyName, contactInfo }: User =
-        await request.json();
+      const body = await request.json();
+      const validatedData = updateUserSchema.parse(body);
+      const { companyName, contactInfo } = validatedData;
       const systemUser = await prisma.user.update({
-        where:{email: email},
+        where:{email: body.email},
         data:{
           companyName:companyName,
           contactInfo:JSON.stringify(contactInfo)

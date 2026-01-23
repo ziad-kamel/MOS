@@ -19,33 +19,44 @@ import { createClient } from '@/utils/supabase/client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from "next/link"
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { loginSchema } from '@/lib/schemas'
+import type { z } from 'zod'
+
+type LoginFormData = z.infer<typeof loginSchema>
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
 
-   const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const router = useRouter()
     const supabase = createClient()
+
+    const {
+      register,
+      handleSubmit,
+      formState: { errors },
+    } = useForm<LoginFormData>({
+      resolver: zodResolver(loginSchema),
+    })
   
-    const handleLogin = async (e: React.FormEvent) => {
-      e.preventDefault()
+    const handleLogin = async (data: LoginFormData) => {
       setLoading(true)
-  
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: data.email,
+        password: data.password,
       })
-  
+
       if (error) {
         alert(error.message)
       } else {
         router.push('/')
       }
-  
+
       setLoading(false)
     }
     
@@ -78,7 +89,7 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin}>
+        <form onSubmit={handleSubmit(handleLogin)}>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -86,8 +97,7 @@ export function LoginForm({
                   id="email"
                   type="email"
                   placeholder="m@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  {...register('email')}
                   required
                 />
               </Field>
@@ -101,7 +111,7 @@ export function LoginForm({
                     Forgot your password?
                   </a>
                 </div>
-                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                <Input id="password" type="password" required {...register('password')} />
               </Field>
               <Field>
                 <Button type="submit" disabled={loading}>{loading ? 'Loading...' : 'Sign In'}</Button>

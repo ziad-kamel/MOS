@@ -4,38 +4,41 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useUser } from "@/components/UserProvider";
+import { updateUserSchema } from "@/lib/schemas";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Edit, Trash2Icon } from "lucide-react";
 import Image from "next/image";
 import { redirect, useRouter } from "next/navigation";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import z from "zod";
+
+type UpdateFormData = z.infer<typeof updateUserSchema>
 const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 export default function ProfileForm() {
   const router = useRouter();
   const { user: authUser } = useUser();
   const [edit, setEdit] = useState(true);
 
-  const [companyName, setCompanyName] = useState(authUser.dbUser?.companyName);
-  const [phone, setPhone] = useState(authUser.dbUser?.contactInfo?.phone);
-  const [address, setAddress] = useState(authUser.dbUser?.contactInfo?.address);
-  const [contactPerson, setcontactPerson] = useState(authUser.dbUser?.contactInfo?.contactPerson);
-
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<UpdateFormData>({
+    resolver: zodResolver(updateUserSchema),
+  });
   if (!authUser.supaUser || !authUser.dbUser) {
     redirect("/login");
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdate = async (data: UpdateFormData) => {
     const updateResponse = await fetch(`${baseUrl}/api/user/`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: authUser.dbUser?.email,
-        companyName: companyName,
-        contactInfo: {
-          phone: phone,
-          address: address,
-          contactPerson: contactPerson,
-        },
+        companyName: data.companyName,
+        contactInfo: data.contactInfo
       }),
     });
     setEdit(!edit);
@@ -64,7 +67,7 @@ export default function ProfileForm() {
         <div className='flex flex-col gap-4 w-fit bg-secondary rounded-2xl p-15'>
           <div className='flex items-center gap-4 '>
             <Image
-              src={authUser.supaUser.user_metadata.avatar_url}
+              src={authUser.supaUser.user_metadata.avatar_url || '/icon.jpg'}
               alt='user-profile-image'
               width={160}
               height={160}
@@ -79,19 +82,9 @@ export default function ProfileForm() {
           </div>
 
           <div className='flex flex-col'>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit(handleUpdate)}>
               <FieldSet>
                 <FieldGroup>
-                  <Field>
-                    <FieldLabel>Username:</FieldLabel>
-                    <Input
-                      id='username'
-                      type='text'
-                      placeholder='Max Leiter'
-                      disabled={true}
-                      value={authUser.supaUser.user_metadata.name}
-                    />
-                  </Field>
 
                   <Field>
                     <FieldLabel>Email:</FieldLabel>
@@ -122,9 +115,10 @@ export default function ProfileForm() {
                       type='text'
                       placeholder='companyName'
                       disabled={edit}
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
+                      defaultValue={authUser.dbUser.companyName}
+                      {...register("companyName")}
                     />
+                    {errors.companyName? <h3 className="text-xs text-red-500">company name is required</h3>:""}
                   </Field>
 
                   <FieldGroup>
@@ -135,8 +129,8 @@ export default function ProfileForm() {
                         type='text'
                         placeholder='01xxxxxxxxx'
                         disabled={edit}
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
+                        defaultValue={authUser.dbUser.contactInfo?.phone}
+                        {...register("contactInfo.phone")}
                       />
                     </Field>
 
@@ -147,8 +141,8 @@ export default function ProfileForm() {
                         type='text'
                         placeholder='10 st, city'
                         disabled={edit}
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
+                        defaultValue={authUser.dbUser.contactInfo?.address}
+                        {...register("contactInfo.address")}
                       />
                     </Field>
 
@@ -159,8 +153,8 @@ export default function ProfileForm() {
                         type='text'
                         placeholder='example'
                         disabled={edit}
-                        value={contactPerson}
-                        onChange={(e) => setcontactPerson(e.target.value)}
+                        defaultValue={authUser.dbUser.contactInfo?.contactPerson}
+                        {...register("contactInfo.contactPerson")}
                       />
                     </Field>
                   </FieldGroup>

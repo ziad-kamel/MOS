@@ -17,20 +17,30 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { signupSchema } from '@/lib/schemas'
+import type { z } from 'zod'
+type SignupFormData = z.infer<typeof signupSchema>
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+  });
+
+  const handleSignUp = async (data: SignupFormData) => {
     setLoading(true);
 
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
+      email: data.email,
+      password: data.password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
@@ -71,7 +81,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSignUp}>
+        <form onSubmit={handleSubmit(handleSignUp)}>
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor='email'>Email</FieldLabel>
@@ -79,9 +89,9 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 id='email'
                 type='email'
                 placeholder='ex: m@example.com'
-                required
-                onChange={(e) => setEmail(e.target.value)}
+                {...register('email')}
               />
+              {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
               <FieldDescription>
                 We&apos;ll use this to contact you. We will not share your email
                 with anyone else.
@@ -92,9 +102,9 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
               <Input
                 id='password'
                 type='password'
-                required
-                onChange={(e) => setPassword(e.target.value)}
+                {...register('password')}
               />
+              {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
               <FieldDescription>
                 Must be at least 8 characters long.
               </FieldDescription>
