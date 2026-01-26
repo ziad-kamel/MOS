@@ -2,9 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/provider";
-import { getCurrentUser } from "@/lib/auth";
-import UserProvider from "@/components/UserProvider";
-import { redirect } from "next/navigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,16 +23,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const loggedInUser = await getCurrentUser()
-
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang='en' suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <UserProvider supaUser={loggedInUser?.supaUser} dbUser={loggedInUser?.dbUser}>
-          <ThemeProvider>{children}</ThemeProvider>
-        </UserProvider>
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

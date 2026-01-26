@@ -8,11 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -26,45 +22,39 @@ import {
   SelectValue,
 } from "./ui/select";
 import { UserRole } from "@/app/generated/prisma/enums";
-import { useUser } from "./UserProvider";
+import { useForm, Controller } from "react-hook-form";
+import { registerUserSchema } from "@/lib/schemas";
+import { zodResolver } from "@hookform/resolvers/zod";
+import z from "zod";
+import {
+  getUserData,
+  registerNewUser,
+  registerUserData,
+} from "@/data-acess/DAO/userDAO";
+import { useUser } from "@/providers/user-provider";
 
 export function WelcomeForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [role, setRole] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [contactPerson, setcontactPerson] = useState("");
-  const UserRole: UserRole[] = ["BRAND", "MANUFACTURER"];
-
   const [loading, setLoading] = useState(false);
-  const { user } = useUser();
-  const router = useRouter();
+  const UserRoleOptions: UserRole[] = ["BRAND", "MANUFACTURER"];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<registerUserData>({
+    resolver: zodResolver(registerUserSchema),
+    defaultValues: {
+      role: "BRAND",
+    },
+  });
+
+  const handleRegisterNewUser = async (data: registerUserData) => {
     setLoading(true);
-
-    const addedUser = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: user.supaUser?.email,
-        role: role,
-        companyName: companyName,
-        contactInfo: {
-          phone: phone,
-          address: address,
-          contactPerson: contactPerson,
-        },
-      }),
-    }).then(() => {
-      alert("done");
-      router.push("/profile");
-    });
-
+    await registerNewUser({ ...data });
     setLoading(false);
   };
 
@@ -78,26 +68,37 @@ export function WelcomeForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit(handleRegisterNewUser)}>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor='role'>Role</FieldLabel>
 
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger className='w-45'>
-                    <SelectValue placeholder={`Select a Role`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>{role}</SelectLabel>
-                      {UserRole.map((role, index) => (
-                        <SelectItem key={index} value={role}>
-                          {role}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name='role'
+                  control={control}
+                  render={({ field }) => (
+                    <Select {...field}>
+                      <SelectTrigger className='w-45'>
+                        <SelectValue placeholder={`Select a Role`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Select Role</SelectLabel>
+                          {UserRoleOptions.map((roleOption, index) => (
+                            <SelectItem key={index} value={roleOption}>
+                              {roleOption}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                      {errors.role && (
+                        <p className='text-xs text-red-500'>
+                          {errors.role.message}
+                        </p>
+                      )}
+                    </Select>
+                  )}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor='companyName'>Company Name</FieldLabel>
@@ -105,10 +106,13 @@ export function WelcomeForm({
                   id='companyName'
                   type='text'
                   placeholder='MOS.dev'
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  required
+                  {...register("companyName")}
                 />
+                {errors.companyName && (
+                  <p className='text-xs text-red-500'>
+                    {errors.companyName.message}
+                  </p>
+                )}
               </Field>
 
               <FieldGroup>
@@ -118,10 +122,13 @@ export function WelcomeForm({
                     id='phone'
                     type='tel'
                     placeholder='01xxxxxxxxx'
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
+                    {...register("contactInfo.phone")}
                   />
+                  {errors.contactInfo?.phone && (
+                    <p className='text-xs text-red-500'>
+                      {errors.contactInfo.phone.message}
+                    </p>
+                  )}
                 </Field>
                 <Field>
                   <FieldLabel htmlFor='address'>Address</FieldLabel>
@@ -129,10 +136,13 @@ export function WelcomeForm({
                     id='address'
                     type='text'
                     placeholder='10 example st, city'
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    required
+                    {...register("contactInfo.address")}
                   />
+                  {errors.contactInfo?.address && (
+                    <p className='text-xs text-red-500'>
+                      {errors.contactInfo.address.message}
+                    </p>
+                  )}
                 </Field>
                 <Field>
                   <FieldLabel htmlFor='contactPerson'>contactPerson</FieldLabel>
@@ -140,10 +150,13 @@ export function WelcomeForm({
                     id='contactPerson'
                     type='text'
                     placeholder='Name of company holder'
-                    value={contactPerson}
-                    onChange={(e) => setcontactPerson(e.target.value)}
-                    required
+                    {...register("contactInfo.contactPerson")}
                   />
+                  {errors.contactInfo?.contactPerson && (
+                    <p className='text-xs text-red-500'>
+                      {errors.contactInfo.contactPerson.message}
+                    </p>
+                  )}
                 </Field>
               </FieldGroup>
 

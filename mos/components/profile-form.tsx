@@ -3,21 +3,21 @@
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useUser } from "@/components/UserProvider";
+import { deleteUser, updateUserData } from "@/data-acess/DAO/userDAO";
 import { updateUserSchema } from "@/lib/schemas";
+import { useUser } from "@/providers/user-provider";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Edit, Trash2Icon } from "lucide-react";
 import Image from "next/image";
 import { redirect, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 
-type UpdateFormData = z.infer<typeof updateUserSchema>
-const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+type UpdateFormData = z.infer<typeof updateUserSchema>;
 export default function ProfileForm() {
   const router = useRouter();
-  const { user: authUser } = useUser();
+  const { user } = useUser();
   const [edit, setEdit] = useState(true);
 
   const {
@@ -27,39 +27,23 @@ export default function ProfileForm() {
   } = useForm<UpdateFormData>({
     resolver: zodResolver(updateUserSchema),
   });
-  if (!authUser.supaUser || !authUser.dbUser) {
-    redirect("/login");
-  }
 
   const handleUpdate = async (data: UpdateFormData) => {
-    const updateResponse = await fetch(`${baseUrl}/api/user/`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: authUser.dbUser?.email,
-        companyName: data.companyName,
-        contactInfo: data.contactInfo
-      }),
+    await updateUserData({
+      companyName: data.companyName || user.companyName,
+      contactInfo: {
+        phone: data.contactInfo.phone || user.contactInfo.phone,
+        address: data.contactInfo.address || user.contactInfo.address,
+        contactPerson:
+          data.contactInfo.contactPerson || user.contactInfo.contactPerson,
+      },
     });
-    setEdit(!edit);
-    router.refresh()
+    setEdit(true);
   };
 
   const handelDelete = async (e: React.FormEvent) => {
     e.preventDefault();
-    const deleteResponse = await fetch(`${baseUrl}/api/user/`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: authUser.dbUser?.email,
-      }),
-    });
-    if (deleteResponse.ok) {
-      router.push("/auth/signout");
-    } else {
-      alert(baseUrl);
-      alert("error while deleting");
-    }
+    await deleteUser();
   };
   return (
     <div className='flex flex-1 flex-col gap-4 p-4'>
@@ -67,7 +51,7 @@ export default function ProfileForm() {
         <div className='flex flex-col gap-4 w-fit bg-secondary rounded-2xl p-15'>
           <div className='flex items-center gap-4 '>
             <Image
-              src={authUser.supaUser.user_metadata.avatar_url || '/icon.jpg'}
+              src={user.avatar || "/icon.jpg"}
               alt='user-profile-image'
               width={160}
               height={160}
@@ -85,7 +69,6 @@ export default function ProfileForm() {
             <form onSubmit={handleSubmit(handleUpdate)}>
               <FieldSet>
                 <FieldGroup>
-
                   <Field>
                     <FieldLabel>Email:</FieldLabel>
                     <Input
@@ -93,7 +76,7 @@ export default function ProfileForm() {
                       type='email'
                       placeholder='max.leiter@example.com'
                       disabled={true}
-                      value={authUser.supaUser.user_metadata.email}
+                      defaultValue={user.email}
                     />
                   </Field>
 
@@ -104,7 +87,7 @@ export default function ProfileForm() {
                       type='text'
                       placeholder='USER'
                       disabled={true}
-                      value={authUser.dbUser.role}
+                      defaultValue={user.role?.toString()}
                     />
                   </Field>
 
@@ -115,10 +98,16 @@ export default function ProfileForm() {
                       type='text'
                       placeholder='companyName'
                       disabled={edit}
-                      defaultValue={authUser.dbUser.companyName}
+                      defaultValue={user.companyName}
                       {...register("companyName")}
                     />
-                    {errors.companyName? <h3 className="text-xs text-red-500">company name is required</h3>:""}
+                    {errors.companyName ? (
+                      <h3 className='text-xs text-red-500'>
+                        company name is required
+                      </h3>
+                    ) : (
+                      ""
+                    )}
                   </Field>
 
                   <FieldGroup>
@@ -129,7 +118,7 @@ export default function ProfileForm() {
                         type='text'
                         placeholder='01xxxxxxxxx'
                         disabled={edit}
-                        defaultValue={authUser.dbUser.contactInfo?.phone}
+                        defaultValue={user.contactInfo.phone}
                         {...register("contactInfo.phone")}
                       />
                     </Field>
@@ -141,7 +130,7 @@ export default function ProfileForm() {
                         type='text'
                         placeholder='10 st, city'
                         disabled={edit}
-                        defaultValue={authUser.dbUser.contactInfo?.address}
+                        defaultValue={user.contactInfo.address}
                         {...register("contactInfo.address")}
                       />
                     </Field>
@@ -153,7 +142,7 @@ export default function ProfileForm() {
                         type='text'
                         placeholder='example'
                         disabled={edit}
-                        defaultValue={authUser.dbUser.contactInfo?.contactPerson}
+                        defaultValue={user.contactInfo.contactPerson}
                         {...register("contactInfo.contactPerson")}
                       />
                     </Field>

@@ -1,32 +1,20 @@
 import { createClient } from "@/utils/supabase/server";
-import prisma from "./prisma";
-
-export async function getCurrentUser() {
+import { NextRequest, NextResponse } from "next/server";
+const baseURL = process.env.NEXT_PUBLIC_API_URL;
+export const authUser = async (req: NextRequest) => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    //the user is not authenticated to use the platform
-    return null;
-  }
-  // Fetch enriched user from DB (e.g. roles, profile)
-  const dbUser = await prisma.user.findUnique({
-    where: { email: user?.email },
-  });
+  const { data, error } = await supabase.auth.getClaims();
+  console.log(data);
 
-  if (!dbUser) {
-    //the user is authenticated but not authorized yet (not completed the needed info to use the platform)
-    return {supaUser: user};
+  if (!error) {
+    if (data) {
+      //user authed
+      //TODO: take the req.cookies.token and decode it with JWT then compare the calims from the token with the data from supabase claims
+      return NextResponse.next();
+    } else {
+      return NextResponse.redirect(`${baseURL}/login`);
+    }
   } else {
-    return {
-      supaUser: user,
-      dbUser: {
-        ...dbUser,
-        contactInfo: JSON.parse(
-          dbUser.contactInfo?.toString() || "no info provided",
-        ),
-      },
-    };
+    return NextResponse.redirect(`${baseURL}/error-page`);
   }
-}
+};

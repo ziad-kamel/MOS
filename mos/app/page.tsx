@@ -1,22 +1,31 @@
 import { Button } from "@/components/ui/button";
-import { getCurrentUser } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { getAllUsers } from "@/data-acess/DAO/userDAO";
+import { Link } from "lucide-react";
 
 export default async function Page() {
-  const authUser = await getCurrentUser();
-
-  if (!authUser) {
-    throw new Error("user not authinticated")
-  }
-
+  const data = await getAllUsers();
   return (
     <div>
-      <h1>Welcome, {authUser.supaUser.user_metadata.full_name}</h1>
       <form action='/auth/signout' method='get'>
         <Button type='submit'>Sign Out</Button>
       </form>
 
+      <form action='/auth/signout' method='get'>
+        <Button type='submit'>Sign Out</Button>
+      </form>
+      <div>
+        {data.map((user, idx) => (
+          <div key={idx}>
+            <div>{JSON.stringify(user)}</div>
+            <br />
+          </div>
+        ))}
+      </div>
       <a href='/home'>home</a>
+
+      <Button>
+        <a href='/welcome'>Get started</a>
+      </Button>
     </div>
   );
 }

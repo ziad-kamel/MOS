@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   AudioWaveform,
   BookOpen,
@@ -13,41 +13,32 @@ import {
   PieChart,
   Settings2,
   SquareTerminal,
-} from "lucide-react"
+} from "lucide-react";
 
-import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { NavMain } from "@/components/nav-main";
+import { NavProjects } from "@/components/nav-projects";
+import { NavUser } from "@/components/nav-user";
+import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
-import { ThemeToggle } from "./ThemeToogleBtn/ThemeToogleBtn"
-import { User } from "@supabase/supabase-js"
-import { useUser } from "./UserProvider"
+} from "@/components/ui/sidebar";
+import { ThemeToggle } from "./ThemeToogleBtn/ThemeToogleBtn";
+import { UserRole } from "@/app/generated/prisma/enums";
+import { useUser } from "@/providers/user-provider";
 
 // This is sample data.
 
 export function AppSidebar() {
-  const {user} = useUser();
+  const { user } = useUser();
   const data = {
-    user: {
-      name: user.dbUser?.contactInfo?.contactPerson || "No Name",
-      email: user.supaUser!.email || "m@example.com",
-      avatar: user.supaUser!.user_metadata.avatar_url || '/icon.jpg',
-      role: user.dbUser!.role
+    team: {
+      name: "Khonsu.MOS",
+      logo: MoonIcon,
     },
-    teams: [
-      {
-        name: "Khonsu.MOS",
-        logo: MoonIcon,
-        role: user.dbUser?.role || 'BRAND',
-      },
-    ],
     navMain: [
       {
         title: "Playground",
@@ -135,24 +126,20 @@ export function AppSidebar() {
         ],
       },
     ],
-  
-  }
+  };
   return (
-    <Sidebar collapsible="icon" >
+    <Sidebar collapsible='icon'>
       <SidebarHeader>
-        <div className="flex items-center">
-        <TeamSwitcher teams={data.teams} />
-        <ThemeToggle/>
+        <div className='flex items-center'>
+          <TeamSwitcher team={data.team} />
+          <ThemeToggle />
         </div>
-
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
+      <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
