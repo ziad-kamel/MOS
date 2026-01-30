@@ -1,10 +1,12 @@
-import { WelcomeForm } from "@/components/welcom-form";
+import RoleSelector from "@/components/register/role-selector";
+import { authCheck } from "@/data-acess/auth-user";
+import { redirect } from "next/navigation";
 
 export default async function welcome() {
   return (
     <div className='flex min-h-svh w-full items-center justify-center p-6 md:p-10'>
       <div className='w-full max-w-sm'>
-        <WelcomeForm />
+        <RoleSelector />
       </div>
     </div>
   );

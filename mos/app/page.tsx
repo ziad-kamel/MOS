@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { getAllUsers } from "@/data-acess/DAO/userDAO";
+import { authCheck } from "@/data-acess/auth-user";
 import { Link } from "lucide-react";
 
 export default async function Page() {
-  const data = await getAllUsers();
+  const loggedInUser = await authCheck();
+  console.log(loggedInUser);
+
   return (
     <div>
       <form action='/auth/signout' method='get'>
@@ -13,18 +15,11 @@ export default async function Page() {
       <form action='/auth/signout' method='get'>
         <Button type='submit'>Sign Out</Button>
       </form>
-      <div>
-        {data.map((user, idx) => (
-          <div key={idx}>
-            <div>{JSON.stringify(user)}</div>
-            <br />
-          </div>
-        ))}
-      </div>
+
       <a href='/home'>home</a>
 
       <Button>
-        <a href='/welcome'>Get started</a>
+        <a href='/register'>Get started</a>
       </Button>
     </div>
   );

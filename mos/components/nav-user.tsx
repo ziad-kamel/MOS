@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   BadgeCheck,
@@ -8,13 +8,9 @@ import {
   LogOut,
   Sparkles,
   UserCircle,
-} from "lucide-react"
+} from "lucide-react";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,22 +19,19 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
-import Link from "next/link"
-import { UserRole } from "@/app/generated/prisma/enums"
+} from "@/components/ui/sidebar";
+import Link from "next/link";
+import { UserRole } from "@/app/generated/prisma";
+import { UserDTO } from "@/data-acess/DAO/userDAO";
 
-export function NavUser({
-  user,
-}: {
-  user: { name: string; email: string; avatar: string, role:UserRole|null }
-}) {
-  const { isMobile } = useSidebar()
+export function NavUser({ user }: { user: UserDTO }) {
+  const { isMobile } = useSidebar();
 
   return (
     <SidebarMenu>
@@ -46,38 +39,50 @@ export function NavUser({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              size='lg'
+              className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.avatar} alt={user.name}  className="rounded-full" />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+              <Avatar className='h-8 w-8 rounded-lg'>
+                <AvatarImage
+                  src={user.avatar || "/icon.jpg"}
+                  alt={user.name}
+                  className='rounded-full'
+                />
+                <AvatarFallback className='rounded-lg'>CN</AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.role?.toLowerCase()}</span>
-                <span className="truncate text-xs">{user.email}</span>
+              <div className='grid flex-1 text-left text-sm leading-tight'>
+                <span className='truncate font-medium'>{user.name}</span>
+                <span className='truncate text-xs'>
+                  {user.role?.toLowerCase()}
+                </span>
+                <span className='truncate text-xs'>{user.email}</span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4" />
+              <ChevronsUpDown className='ml-auto size-4' />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className='w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg'
             side={isMobile ? "bottom" : "right"}
-            align="end"
+            align='end'
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <Link href="/profile" className="w-full flex items-center">
-                <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={user.avatar} alt={user.name} className="rounded-full" />
-                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+            <DropdownMenuLabel className='p-0 font-normal'>
+              <Link href='/profile' className='w-full flex items-center'>
+                <div className='flex items-center gap-2 px-1 py-1.5 text-left text-sm'>
+                  <Avatar className='h-8 w-8 rounded-lg'>
+                    <AvatarImage
+                      src={user.avatar || "/icon.jpg"}
+                      alt={user.name}
+                      className='rounded-full'
+                    />
+                    <AvatarFallback className='rounded-lg'>CN</AvatarFallback>
                   </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{user.name}</span>
-                    <span className="truncate text-xs">{user.role?.toLowerCase()}</span>
-                    <span className="truncate text-xs">{user.email}</span>
+                  <div className='grid flex-1 text-left text-sm leading-tight'>
+                    <span className='truncate font-medium'>{user.name}</span>
+                    <span className='truncate text-xs'>
+                      {user.role?.toLowerCase()}
+                    </span>
+                    <span className='truncate text-xs'>{user.email}</span>
                   </div>
                 </div>
               </Link>
@@ -92,11 +97,11 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-              <Link href="/profile" className="w-full flex items-center">
-                <UserCircle className="mr-2" />
-                Profile
-              </Link>
-            </DropdownMenuItem>
+                <Link href='/profile' className='w-full flex items-center'>
+                  <UserCircle className='mr-2' />
+                  Profile
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem>
                 <CreditCard />
                 Billing
@@ -108,8 +113,8 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <Link href="/auth/signout" className="w-full flex items-center">
-                <LogOut className="mr-2" />
+              <Link href='/auth/signout' className='w-full flex items-center'>
+                <LogOut className='mr-2' />
                 Sign out
               </Link>
             </DropdownMenuItem>
@@ -117,5 +122,5 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

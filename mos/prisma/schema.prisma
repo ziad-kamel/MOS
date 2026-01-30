@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../app/generated/prisma"
 }
 
@@ -8,19 +8,99 @@ datasource db {
 }
 
 model User {
-  id        String   @id @db.Uuid @default(uuid())
-  email     String   @unique
-  role      UserRole     @default(BRAND)
-  companyName String
-  contactInfo Json?
-  capabilities String[] @default([])
-  isActive Boolean?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String        @id @default(uuid())
+  role         UserRole
+  admin        Admin?
+  brand        Brand?
+  manufacturer Manufacturer?
+  superAdmin   SuperAdmin?
+}
+
+model Admin {
+  id     String  @id
+  user   User    @relation(fields: [id], references: [id], onDelete: Cascade)
+  orders Order[]
+}
+
+model SuperAdmin {
+  id   String @id
+  user User   @relation(fields: [id], references: [id], onDelete: Cascade)
+}
+
+model Brand {
+  id               String  @id
+  rankId           String
+  warehouseAddress String
+  contactNo1       String
+  contactNo2       String?
+  user             User    @relation(fields: [id], references: [id], onDelete: Cascade)
+  rank             Rank    @relation(fields: [rankId], references: [id])
+  orders           Order[]
+}
+
+model Manufacturer {
+  id             String  @id
+  rankId         String
+  factoryAddress String
+  limitPerOrder  Int
+  contactNo1     String
+  contactNo2     String?
+  user           User    @relation(fields: [id], references: [id], onDelete: Cascade)
+  rank           Rank    @relation(fields: [rankId], references: [id])
+}
+
+model Rank {
+  id            String         @id @default(uuid())
+  name          String         @unique
+  amount        Int            @default(0)
+  brands        Brand[]
+  manufacturers Manufacturer[]
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  brandId   String
+  adminId   String?
+  notes     String?
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  admin     Admin?      @relation(fields: [adminId], references: [id])
+  brand     Brand       @relation(fields: [brandId], references: [id])
+  subOrders SubOrder[]
+}
+
+model SubOrder {
+  id          String         @id @default(uuid())
+  orderId     String
+  note        String?
+  status      SubOrderStatus @default(PENDING)
+  attachments String[]
+  details     Json
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  order       Order          @relation(fields: [orderId], references: [id])
 }
 
 enum UserRole {
+  ADMIN
+  SUPER_ADMIN
   BRAND
   MANUFACTURER
-  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum SubOrderStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  REJECTED
 }

@@ -27,7 +27,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "./ThemeToogleBtn/ThemeToogleBtn";
-import { UserRole } from "@/app/generated/prisma/enums";
 import { useUser } from "@/providers/user-provider";
 
 // This is sample data.

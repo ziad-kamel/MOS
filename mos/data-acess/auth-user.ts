@@ -1,8 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
-import { redirect, RedirectType } from "next/navigation";
-import { UserRole } from "@/app/generated/prisma/enums";
-import { NextResponse } from "next/server";
+import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -16,23 +15,19 @@ export const authenticateUser = async () => {
   } = await supabase.auth.getUser();
 
   if (error || !user) {
-    NextResponse.redirect(`${baseURL}/login`);
+    redirect(`${baseURL}/login`);
   }
-  return { user, isAuthenticated: true };
+  return { supabaseUser: user, isAuthenticated: true };
 };
 
 //cheeks if the user is authorized
 //if not it will redirect to welcome page to complete profile
-export const authorizeUser = async () => {
-  const { user, isAuthenticated } = await authenticateUser();
-  if (!isAuthenticated || !user) {
-    redirect(`${process.env.NEXT_PUBLIC_API_URL}/login`);
-  }
+export const authorizeUser = async (authenticatedUserId: string) => {
   const userData = await prisma.user.findUnique({
-    where: { email: user.email },
+    where: { id: authenticatedUserId },
   });
-  if (!userData) {
-    redirect(`${process.env.NEXT_PUBLIC_API_URL}/welcome`);
+  if (userData === null) {
+    redirect(`${baseURL}/register`);
   }
   return { userData, isAuthorized: true };
 };
@@ -40,13 +35,8 @@ export const authorizeUser = async () => {
 //used to cheek on the current user if authenticated and authorized
 //if any of them not satisfied it will redirect to login page or welcome page
 export const authCheck = async () => {
-  const { user, isAuthenticated } = await authenticateUser();
-  if (!isAuthenticated || !user) {
-    redirect(`${process.env.NEXT_PUBLIC_API_URL}/login`);
-  }
-  const { userData, isAuthorized } = await authorizeUser();
-  if (!isAuthorized || !userData) {
-    redirect(`${process.env.NEXT_PUBLIC_API_URL}/welcome`);
-  }
-  return { user, userData, isAuthorized, isAuthenticated };
+  const { supabaseUser, isAuthenticated } = await authenticateUser();
+
+  const { userData, isAuthorized } = await authorizeUser(supabaseUser.id);
+  return { supabaseUser, userData, isAuthorized, isAuthenticated };
 };
