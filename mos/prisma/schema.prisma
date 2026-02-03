@@ -47,6 +47,8 @@ model Manufacturer {
   contactNo2     String?
   user           User    @relation(fields: [id], references: [id], onDelete: Cascade)
   rank           Rank    @relation(fields: [rankId], references: [id])
+
+  subOrders SubOrder[]
 }
 
 model Rank {
@@ -71,6 +73,9 @@ model Order {
 }
 
 model SubOrder {
+  manufacturerId String
+  manufacturer   Manufacturer   @relation(fields: [manufacturerId], references: [id])
+
   id          String         @id @default(uuid())
   orderId     String
   note        String?

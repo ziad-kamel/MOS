@@ -132,6 +132,19 @@ export const signupSchema = z.object({
 export const updateBrandSchema = brandSchema
   .partial()
   .omit({ id: true, rankId: true });
-export const updateManufacturerSchema = manufacturerSchema
-  .partial()
-  .omit({ id: true, rankId: true });
+export const createSubOrderSchema = z.object({
+  manufacturerId: z.string().uuid("Please select a manufacturer"),
+  note: z.string().optional(),
+  details: z.object({
+    color: z.string().min(1, "Color is required"),
+    size: z.string().min(1, "Size is required"),
+    quantity: z.number().int().positive("Quantity must be at least 1"),
+  }),
+});
+
+export const createOrderSchema = z.object({
+  notes: z.string().optional(),
+  subOrders: z
+    .array(createSubOrderSchema)
+    .min(1, "At least one sub-order is required"),
+});

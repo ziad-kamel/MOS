@@ -7,6 +7,7 @@ import z from "zod";
 import prisma from "@/lib/prisma";
 
 export type UserDTO = {
+  id: string;
   name: string;
   email: string;
   role: string;
@@ -15,6 +16,7 @@ export type UserDTO = {
 export async function getUserData(): Promise<UserDTO> {
   const userInfo = await authCheck();
   return {
+    id: userInfo.supabaseUser.id,
     name: userInfo.supabaseUser.user_metadata.full_name,
     email: userInfo.supabaseUser.email!,
     role: userInfo.userData?.role!,
