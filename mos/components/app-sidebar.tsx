@@ -44,21 +44,18 @@ export function AppSidebar() {
     navMain: [
       {
         title: "Orders",
-        url: "home/orders",
+        url: "/home/orders",
         icon: Boxes,
-      },
-      {
-        title: "Manufacturers",
-        url: "/home/manufacturers",
-        icon: Factory,
-      },
-      {
-        title: "Profile",
-        url: "/profile",
-        icon: UserCircle,
       },
     ],
   };
+  if (user?.role === "BRAND") {
+    data.navMain.push({
+      title: "Manufacturers",
+      url: "/home/manufacturers",
+      icon: Factory,
+    });
+  }
   return (
     <Sidebar collapsible='icon'>
       <SidebarHeader>

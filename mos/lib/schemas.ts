@@ -14,12 +14,6 @@ export const OrderStatusEnum = z.enum([
   "DELIVERED",
   "CANCELLED",
 ]);
-export const SubOrderStatusEnum = z.enum([
-  "PENDING",
-  "IN_PROGRESS",
-  "DONE",
-  "REJECTED",
-]);
 
 // --- Base Models ---
 
@@ -65,7 +59,8 @@ export const subOrderSchema = z.object({
   id: z.string().uuid().optional(),
   orderId: z.string().uuid(),
   note: z.string().optional().nullable(),
-  status: SubOrderStatusEnum.default("PENDING"),
+  rejectionReason: z.string().optional().nullable(),
+  status: z.string().default("PENDING"),
   attachments: z.array(z.string()).default([]),
   details: z.object({
     color: z.string(),

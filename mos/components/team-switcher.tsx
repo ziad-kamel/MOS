@@ -12,7 +12,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { UserRole } from "@/app/generated/prisma/enums";
+import Link from "next/link";
 
 export function TeamSwitcher({
   team,
@@ -34,21 +34,25 @@ export function TeamSwitcher({
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size='lg'
-              className=' data-[state=open]:text-sidebar-accent-foreground'
-            >
-              <img
-                src='/icon.jpg'
-                width={40}
-                height={40}
-                alt='icon'
-                className='rounded-full'
-              />
-              <div className=' flex text-center text-sm leading-tight'>
-                <span className='truncate font-medium'>{activeTeam.name}</span>
-              </div>
-            </SidebarMenuButton>
+            <Link href='/home'>
+              <SidebarMenuButton
+                size='lg'
+                className=' data-[state=open]:text-sidebar-accent-foreground'
+              >
+                <img
+                  src='/icon.jpg'
+                  width={40}
+                  height={40}
+                  alt='icon'
+                  className='rounded-full'
+                />
+                <div className=' flex text-center text-sm leading-tight'>
+                  <span className='truncate font-medium'>
+                    {activeTeam.name}
+                  </span>
+                </div>
+              </SidebarMenuButton>
+            </Link>
           </DropdownMenuTrigger>
         </DropdownMenu>
       </SidebarMenuItem>

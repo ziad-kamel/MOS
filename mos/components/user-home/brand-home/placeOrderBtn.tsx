@@ -55,19 +55,24 @@ export function PlaceOrderBtn() {
     }
 
     console.log("Submitting Valid Order:", result.data);
-    // Here you would call your server action to create the order
-    try {
-      const addOrder = createOrder({
-        brandId: user?.id,
-        subOrders: result.data.subOrders,
-      });
-      alert("Order created successfully");
-    } catch (error) {
-      alert(error);
-    } finally {
-      setOpen(!open);
-    }
-    // e.g., await createOrder(result.data);
+
+    const submitOrder = async () => {
+      try {
+        await createOrder({
+          brandId: user?.id || "",
+          subOrders: result.data.subOrders,
+        });
+        alert("Order created successfully");
+        setSubOrders([]);
+        setOrderNotes("");
+        setOpen(false);
+      } catch (error: any) {
+        console.error("Order creation failed:", error);
+        alert("Failed to create order: " + (error.message || error));
+      }
+    };
+
+    submitOrder();
   };
 
   return (

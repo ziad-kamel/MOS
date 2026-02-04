@@ -79,7 +79,8 @@ model SubOrder {
   id          String         @id @default(uuid())
   orderId     String
   note        String?
-  status      SubOrderStatus @default(PENDING)
+  rejectionReason String?
+  status      String @default("PENDING")
   attachments String[]
   details     Json
   createdAt   DateTime       @default(now())
@@ -101,11 +102,4 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
-}
-
-enum SubOrderStatus {
-  PENDING
-  IN_PROGRESS
-  DONE
-  REJECTED
 }

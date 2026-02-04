@@ -9,20 +9,20 @@ export async function createOrder(data: {
     details: { color: string; size: string; quantity: number };
   }[];
 }) {
-  await prisma.order.create({
+  return await prisma.order.create({
     data: {
       brandId: data.brandId,
       subOrders: {
-        createMany: {
-          data: data.subOrders.map((subOrder) => {
-            return {
-              manufacturerId: subOrder.manufacturerId,
-              note: subOrder.note,
-              details: subOrder.details,
-            };
-          }),
-        },
+        create: data.subOrders.map((subOrder) => ({
+          manufacturerId: subOrder.manufacturerId,
+          note: subOrder.note,
+          details: subOrder.details,
+          status: "PENDING", // Explicitly set as string
+        })),
       },
+    },
+    include: {
+      subOrders: true,
     },
   });
 }
