@@ -16,6 +16,7 @@ import {
   Settings2,
   SquareTerminal,
   UserCircle,
+  ShieldAlert,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -65,6 +66,11 @@ export function AppSidebar() {
       title: "Brands",
       url: "/home/brands",
       icon: UserCircle,
+    });
+    data.navMain.push({
+      title: "Admins",
+      url: "/home/admins",
+      icon: ShieldAlert,
     });
   }
   return (

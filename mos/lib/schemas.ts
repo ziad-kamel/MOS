@@ -143,3 +143,9 @@ export const createOrderSchema = z.object({
     .array(createSubOrderSchema)
     .min(1, "At least one sub-order is required"),
 });
+
+export const createAdminSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  name: z.string().min(1, "Name is required"),
+});
