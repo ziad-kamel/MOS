@@ -6,8 +6,12 @@ import {
   getAllOrders,
   updateOrderStatus,
   getOrdersByManufacturer,
+  deleteOrder,
 } from "@/data-acess/DAO/orderDTO";
-import { getSubOrdersForManufacturer } from "@/data-acess/DAO/subOrderDAO";
+import {
+  getSubOrdersForManufacturer,
+  deleteSubOrder,
+} from "@/data-acess/DAO/subOrderDAO";
 import { useUser } from "@/providers/user-provider";
 import {
   Card,
@@ -29,6 +33,7 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -76,7 +81,7 @@ export default function OrdersPage() {
       if (user?.id) {
         try {
           let fetchedOrders;
-          if (user.role === "ADMIN") {
+          if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
             fetchedOrders = await getAllOrders();
           } else if (user.role === "MANUFACTURER") {
             fetchedOrders = await getOrdersByManufacturer(user.id);
@@ -120,6 +125,54 @@ export default function OrdersPage() {
       }
     } catch (error) {
       console.error("Failed to update order status:", error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this order? This will also remove ALL associated sub-orders. This action cannot be undone.",
+      )
+    )
+      return;
+
+    setActionLoading(orderId);
+    try {
+      await deleteOrder(orderId);
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    } catch (error) {
+      console.error("Failed to delete order:", error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteSubOrder = async (orderId: string, subOrderId: string) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this specific sub-order? This action cannot be undone.",
+      )
+    )
+      return;
+
+    setActionLoading(subOrderId);
+    try {
+      await deleteSubOrder(subOrderId);
+      setOrders((prev) =>
+        prev
+          .map((o) => {
+            if (o.id !== orderId) return o;
+            return {
+              ...o,
+              subOrders: o.subOrders.filter((s: any) => s.id !== subOrderId),
+            };
+          })
+          .filter((o) => o.subOrders.length > 0),
+      );
+    } catch (error) {
+      console.error("Failed to delete sub-order:", error);
     } finally {
       setActionLoading(null);
     }
@@ -251,58 +304,77 @@ export default function OrdersPage() {
                     </div>
 
                     <div className='flex flex-wrap gap-6 items-center'>
-                      {user?.role === "ADMIN" && order.status === "PENDING" && (
-                        <div className='flex items-center gap-3'>
-                          {!order.subOrders.every(
-                            (s: any) => s.status !== "PENDING",
-                          ) && (
-                            <span className='text-[10px] text-amber-600 font-medium animate-pulse'>
-                              Awaiting Manufacturer Review...
-                            </span>
-                          )}
-                          <div className='flex gap-2'>
-                            <Button
-                              size='sm'
-                              variant='outline'
-                              className='h-8 border-emerald-200/50 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-900/50 dark:text-emerald-400 dark:hover:bg-emerald-950/20'
-                              disabled={
-                                actionLoading === order.id ||
-                                !order.subOrders.every(
-                                  (s: any) => s.status !== "PENDING",
-                                )
-                              }
-                              onClick={() =>
-                                handleStatusUpdate(order.id, "ACCEPTED")
-                              }
-                            >
-                              {actionLoading === order.id ? (
-                                <Loader2 className='w-3.5 h-3.5 animate-spin mr-1.5' />
-                              ) : (
-                                <CheckCircle2 className='w-3.5 h-3.5 mr-1.5' />
-                              )}
-                              Accept
-                            </Button>
-                            <Button
-                              size='sm'
-                              variant='outline'
-                              className='h-8 border-rose-200/50 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/20'
-                              disabled={
-                                actionLoading === order.id ||
-                                !order.subOrders.every(
-                                  (s: any) => s.status !== "PENDING",
-                                )
-                              }
-                              onClick={() => setRejectDialogOrder(order.id)}
-                            >
-                              {actionLoading === order.id ? (
-                                <Loader2 className='w-3.5 h-3.5 animate-spin mr-1.5' />
-                              ) : (
-                                <XCircle className='w-3.5 h-3.5 mr-1.5' />
-                              )}
-                              Reject
-                            </Button>
+                      {(user?.role === "ADMIN" ||
+                        user?.role === "SUPER_ADMIN") &&
+                        order.status === "PENDING" && (
+                          <div className='flex items-center gap-3'>
+                            {!order.subOrders.every(
+                              (s: any) => s.status !== "PENDING",
+                            ) && (
+                              <span className='text-[10px] text-amber-600 font-medium animate-pulse'>
+                                Awaiting Manufacturer Review...
+                              </span>
+                            )}
+                            <div className='flex gap-2'>
+                              <Button
+                                size='sm'
+                                variant='outline'
+                                className='h-8 border-emerald-200/50 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-900/50 dark:text-emerald-400 dark:hover:bg-emerald-950/20'
+                                disabled={
+                                  actionLoading === order.id ||
+                                  !order.subOrders.every(
+                                    (s: any) => s.status !== "PENDING",
+                                  )
+                                }
+                                onClick={() =>
+                                  handleStatusUpdate(order.id, "ACCEPTED")
+                                }
+                              >
+                                {actionLoading === order.id ? (
+                                  <Loader2 className='w-3.5 h-3.5 animate-spin mr-1.5' />
+                                ) : (
+                                  <CheckCircle2 className='w-3.5 h-3.5 mr-1.5' />
+                                )}
+                                Accept
+                              </Button>
+                              <Button
+                                size='sm'
+                                variant='outline'
+                                className='h-8 border-rose-200/50 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/20'
+                                disabled={
+                                  actionLoading === order.id ||
+                                  !order.subOrders.every(
+                                    (s: any) => s.status !== "PENDING",
+                                  )
+                                }
+                                onClick={() => setRejectDialogOrder(order.id)}
+                              >
+                                {actionLoading === order.id ? (
+                                  <Loader2 className='w-3.5 h-3.5 animate-spin mr-1.5' />
+                                ) : (
+                                  <XCircle className='w-3.5 h-3.5 mr-1.5' />
+                                )}
+                                Reject
+                              </Button>
+                            </div>
                           </div>
-                        </div>
+                        )}
+
+                      {user?.role === "SUPER_ADMIN" && (
+                        <Button
+                          size='sm'
+                          variant='ghost'
+                          className='h-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-100'
+                          onClick={() => handleDeleteOrder(order.id)}
+                          disabled={actionLoading === order.id}
+                        >
+                          {actionLoading === order.id ? (
+                            <Loader2 className='w-3.5 h-3.5 animate-spin mr-1.5' />
+                          ) : (
+                            <Trash2 className='w-3.5 h-3.5 mr-1.5' />
+                          )}
+                          Delete
+                        </Button>
                       )}
                       <div className='flex flex-col items-end'>
                         <span className='text-[10px] uppercase font-bold text-muted-foreground'>
@@ -420,6 +492,27 @@ export default function OrdersPage() {
                                 <span className='font-bold'>Instructions:</span>{" "}
                                 {sub.note}
                               </p>
+                            </div>
+                          )}
+
+                          {user?.role === "SUPER_ADMIN" && (
+                            <div className='mt-4 pt-3 border-t border-border/40'>
+                              <Button
+                                size='sm'
+                                variant='ghost'
+                                className='w-full text-[10px] h-7 text-rose-500 hover:text-rose-700 hover:bg-rose-50'
+                                onClick={() =>
+                                  handleDeleteSubOrder(order.id, sub.id)
+                                }
+                                disabled={actionLoading === sub.id}
+                              >
+                                {actionLoading === sub.id ? (
+                                  <Loader2 className='w-3 h-3 animate-spin mr-1.5' />
+                                ) : (
+                                  <Trash2 className='w-3 h-3 mr-1.5' />
+                                )}
+                                Delete Sub-task
+                              </Button>
                             </div>
                           )}
                         </div>

@@ -60,3 +60,8 @@ export async function addSubOrderNote(subOrderId: string, note: string) {
     },
   });
 }
+export async function deleteSubOrder(subOrderId: string) {
+  return await prisma.subOrder.delete({
+    where: { id: subOrderId },
+  });
+}

@@ -14,12 +14,12 @@ model User {
   brand        Brand?
   manufacturer Manufacturer?
   superAdmin   SuperAdmin?
+  administeredOrders Order[] @relation("AdministeredOrders")
 }
 
 model Admin {
   id     String  @id
   user   User    @relation(fields: [id], references: [id], onDelete: Cascade)
-  orders Order[]
 }
 
 model SuperAdmin {
@@ -67,14 +67,14 @@ model Order {
   status    OrderStatus @default(PENDING)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
-  admin     Admin?      @relation(fields: [adminId], references: [id])
-  brand     Brand       @relation(fields: [brandId], references: [id])
+  admin     User?       @relation("AdministeredOrders", fields: [adminId], references: [id])
+  brand     Brand       @relation(fields: [brandId], references: [id], onDelete: Cascade)
   subOrders SubOrder[]
 }
 
 model SubOrder {
   manufacturerId String
-  manufacturer   Manufacturer   @relation(fields: [manufacturerId], references: [id])
+  manufacturer   Manufacturer   @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
 
   id          String         @id @default(uuid())
   orderId     String
@@ -85,7 +85,7 @@ model SubOrder {
   details     Json
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
-  order       Order          @relation(fields: [orderId], references: [id])
+  order       Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 enum UserRole {

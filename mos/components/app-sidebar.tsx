@@ -49,11 +49,22 @@ export function AppSidebar() {
       },
     ],
   };
-  if (user?.role === "BRAND" || user?.role === "ADMIN") {
+  if (
+    user?.role === "BRAND" ||
+    user?.role === "ADMIN" ||
+    user?.role === "SUPER_ADMIN"
+  ) {
     data.navMain.push({
       title: "Manufacturers",
       url: "/home/manufacturers",
       icon: Factory,
+    });
+  }
+  if (user?.role === "SUPER_ADMIN") {
+    data.navMain.push({
+      title: "Brands",
+      url: "/home/brands",
+      icon: UserCircle,
     });
   }
   return (

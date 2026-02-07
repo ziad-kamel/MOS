@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getManufacturers } from "@/data-acess/DAO/manDAO";
+import { getManufacturers, deleteManufacturer } from "@/data-acess/DAO/manDAO";
+import { useUser } from "@/providers/user-provider";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -20,6 +22,8 @@ import {
   Search,
   Filter,
   Info,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,8 +46,10 @@ const CustomBadge = ({
 );
 
 export default function ManufacturersPage() {
+  const { user } = useUser();
   const [manufacturers, setManufacturers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchManufacturers() {
@@ -58,6 +64,25 @@ export default function ManufacturersPage() {
     }
     fetchManufacturers();
   }, []);
+
+  const handleDeleteManufacturer = async (manId: string) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this manufacturer? This will also remove ALL their associated sub-orders. This action cannot be undone.",
+      )
+    )
+      return;
+
+    setActionLoading(manId);
+    try {
+      await deleteManufacturer(manId);
+      setManufacturers((prev) => prev.filter((m) => m.id !== manId));
+    } catch (error) {
+      console.error("Failed to delete manufacturer:", error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const getRankStyles = (rankName: string) => {
     switch (rankName.toUpperCase()) {
@@ -192,14 +217,35 @@ export default function ManufacturersPage() {
                   </div>
 
                   <div className='pt-4 border-t border-border/40 flex items-center justify-between'>
-                    <span className='text-xs text-muted-foreground flex items-center gap-1.5'>
-                      <Info className='w-3.5 h-3.5' />
-                      Verified Production Partner
-                    </span>
-                    <button className='text-xs font-bold text-primary flex items-center gap-1 hover:underline'>
-                      View Details
-                      <Search className='w-3 h-3' />
-                    </button>
+                    <div className='flex flex-col gap-2 w-full'>
+                      <div className='flex items-center justify-between'>
+                        <span className='text-xs text-muted-foreground flex items-center gap-1.5'>
+                          <Info className='w-3.5 h-3.5' />
+                          Verified Production Partner
+                        </span>
+                        <button className='text-xs font-bold text-primary flex items-center gap-1 hover:underline'>
+                          View Details
+                          <Search className='w-3 h-3' />
+                        </button>
+                      </div>
+
+                      {user?.role === "SUPER_ADMIN" && (
+                        <Button
+                          size='sm'
+                          variant='ghost'
+                          className='w-full mt-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-100'
+                          onClick={() => handleDeleteManufacturer(man.id)}
+                          disabled={actionLoading === man.id}
+                        >
+                          {actionLoading === man.id ? (
+                            <Loader2 className='w-3.5 h-3.5 animate-spin mr-1.5' />
+                          ) : (
+                            <Trash2 className='w-3.5 h-3.5 mr-1.5' />
+                          )}
+                          Delete Partner
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

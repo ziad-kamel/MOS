@@ -2,14 +2,16 @@
 
 import prisma from "@/lib/prisma";
 
-export async function getManufacturers() {
-  return await prisma.manufacturer.findMany({
+export async function getBrands() {
+  return await prisma.brand.findMany({
     include: {
+      user: true,
       rank: true,
     },
   });
 }
-export async function deleteManufacturer(id: string) {
+
+export async function deleteBrand(id: string) {
   return await prisma.user.delete({
     where: { id: id },
   });

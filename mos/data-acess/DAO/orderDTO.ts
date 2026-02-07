@@ -124,3 +124,11 @@ export async function getOrdersByManufacturer(manufacturerId: string) {
     },
   });
 }
+export async function deleteOrder(orderId: string) {
+  // Prisma will handle sub-order deletion if configured in schema,
+  // but let's be explicit if needed or just use delete.
+  // Actually, Order has subOrders relation.
+  return await prisma.order.delete({
+    where: { id: orderId },
+  });
+}
