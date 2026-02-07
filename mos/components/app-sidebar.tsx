@@ -49,7 +49,7 @@ export function AppSidebar() {
       },
     ],
   };
-  if (user?.role === "BRAND") {
+  if (user?.role === "BRAND" || user?.role === "ADMIN") {
     data.navMain.push({
       title: "Manufacturers",
       url: "/home/manufacturers",

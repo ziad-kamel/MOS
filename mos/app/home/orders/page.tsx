@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getOrders } from "@/data-acess/DAO/orderDTO";
+import {
+  getOrders,
+  getAllOrders,
+  updateOrderStatus,
+  getOrdersByManufacturer,
+} from "@/data-acess/DAO/orderDTO";
+import { getSubOrdersForManufacturer } from "@/data-acess/DAO/subOrderDAO";
 import { useUser } from "@/providers/user-provider";
 import {
   Card,
@@ -20,8 +26,22 @@ import {
   ChevronRight,
   Package,
   TrendingUp,
+  CheckCircle2,
+  XCircle,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 // Custom Badge component to avoid missing shadcn component issues
 const CustomBadge = ({
@@ -41,16 +61,28 @@ const CustomBadge = ({
   </div>
 );
 
-export default function BrandOrdersPage() {
+export default function OrdersPage() {
   const { user } = useUser();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [rejectDialogOrder, setRejectDialogOrder] = useState<string | null>(
+    null,
+  );
+  const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
     async function fetchOrders() {
       if (user?.id) {
         try {
-          const fetchedOrders = await getOrders(user.id);
+          let fetchedOrders;
+          if (user.role === "ADMIN") {
+            fetchedOrders = await getAllOrders();
+          } else if (user.role === "MANUFACTURER") {
+            fetchedOrders = await getOrdersByManufacturer(user.id);
+          } else {
+            fetchedOrders = await getOrders(user.id);
+          }
           setOrders(
             fetchedOrders.sort(
               (a, b) =>
@@ -66,12 +98,39 @@ export default function BrandOrdersPage() {
       }
     }
     fetchOrders();
-  }, [user?.id]);
+  }, [user?.id, user?.role]);
+
+  const handleStatusUpdate = async (
+    orderId: string,
+    status: "ACCEPTED" | "CANCELLED",
+    reason?: string,
+  ) => {
+    if (!user?.id) return;
+    setActionLoading(orderId);
+    try {
+      await updateOrderStatus(orderId, status, user.id, reason);
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId ? { ...o, status, adminId: user.id } : o,
+        ),
+      );
+      if (status === "CANCELLED") {
+        setRejectDialogOrder(null);
+        setRejectionReason("");
+      }
+    } catch (error) {
+      console.error("Failed to update order status:", error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const getStatusStyles = (status: string) => {
     switch (status) {
       case "PENDING":
         return "bg-amber-50 text-amber-600 border-amber-200/50 dark:bg-amber-950/20 dark:text-amber-400";
+      case "PENDING_ADMIN_ACCEPT":
+        return "bg-orange-50 text-orange-600 border-orange-200/50 dark:bg-orange-950/20 dark:text-orange-400";
       case "ACCEPTED":
         return "bg-blue-50 text-blue-600 border-blue-200/50 dark:bg-blue-950/20 dark:text-blue-400";
       case "IN_PROGRESS":
@@ -96,10 +155,18 @@ export default function BrandOrdersPage() {
             <span>Overview</span>
           </div>
           <h1 className='text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-foreground to-foreground/70'>
-            Order History
+            {user?.role === "ADMIN"
+              ? "All Orders"
+              : user?.role === "MANUFACTURER"
+                ? "Production History"
+                : "Order History"}
           </h1>
           <p className='text-muted-foreground text-lg'>
-            Monitor and manage your production lifecycle.
+            {user?.role === "ADMIN"
+              ? "Review and manage all production requests."
+              : user?.role === "MANUFACTURER"
+                ? "Full log of your completed and active production runs."
+                : "Monitor and manage your production lifecycle."}
           </p>
         </div>
 
@@ -113,14 +180,18 @@ export default function BrandOrdersPage() {
           <Separator orientation='vertical' className='h-10' />
           <div className='text-center px-4'>
             <p className='text-[10px] uppercase font-bold text-muted-foreground tracking-widest'>
-              Active Items
+              {user?.role === "ADMIN" ? "Pending Approval" : "Active Items"}
             </p>
             <p className='text-xl font-bold'>
-              {
-                orders.filter(
-                  (o) => !["DELIVERED", "CANCELLED"].includes(o.status),
-                ).length
-              }
+              {user?.role === "ADMIN"
+                ? orders.filter((o) => o.status === "PENDING").length
+                : user?.role === "MANUFACTURER"
+                  ? orders.filter(
+                      (o) => !["DONE", "REJECTED"].includes(o.status),
+                    ).length
+                  : orders.filter(
+                      (o) => !["DELIVERED", "CANCELLED"].includes(o.status),
+                    ).length}
             </p>
           </div>
         </div>
@@ -139,7 +210,7 @@ export default function BrandOrdersPage() {
         </div>
       ) : orders.length > 0 ? (
         <div className='grid gap-8'>
-          {orders.map((order) => (
+          {orders.map((order: any) => (
             <div key={order.id} className='group relative'>
               {/* Decorative side bar */}
               <div
@@ -149,7 +220,9 @@ export default function BrandOrdersPage() {
                     ? "bg-amber-400"
                     : order.status === "DELIVERED"
                       ? "bg-emerald-400"
-                      : "bg-primary",
+                      : order.status === "CANCELLED"
+                        ? "bg-rose-400"
+                        : "bg-primary",
                 )}
               />
 
@@ -164,13 +237,73 @@ export default function BrandOrdersPage() {
                         <CustomBadge className={getStatusStyles(order.status)}>
                           {order.status}
                         </CustomBadge>
+                        {(user?.role === "ADMIN" ||
+                          user?.role === "MANUFACTURER") &&
+                          order.brand?.user?.id && (
+                            <span className='text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded uppercase'>
+                              Brand: {order.brand.user.id.slice(0, 8)}
+                            </span>
+                          )}
                       </div>
                       <CardTitle className='text-2xl font-bold'>
                         Production Order
                       </CardTitle>
                     </div>
 
-                    <div className='flex flex-wrap gap-6 text-sm'>
+                    <div className='flex flex-wrap gap-6 items-center'>
+                      {user?.role === "ADMIN" && order.status === "PENDING" && (
+                        <div className='flex items-center gap-3'>
+                          {!order.subOrders.every(
+                            (s: any) => s.status !== "PENDING",
+                          ) && (
+                            <span className='text-[10px] text-amber-600 font-medium animate-pulse'>
+                              Awaiting Manufacturer Review...
+                            </span>
+                          )}
+                          <div className='flex gap-2'>
+                            <Button
+                              size='sm'
+                              variant='outline'
+                              className='h-8 border-emerald-200/50 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-900/50 dark:text-emerald-400 dark:hover:bg-emerald-950/20'
+                              disabled={
+                                actionLoading === order.id ||
+                                !order.subOrders.every(
+                                  (s: any) => s.status !== "PENDING",
+                                )
+                              }
+                              onClick={() =>
+                                handleStatusUpdate(order.id, "ACCEPTED")
+                              }
+                            >
+                              {actionLoading === order.id ? (
+                                <Loader2 className='w-3.5 h-3.5 animate-spin mr-1.5' />
+                              ) : (
+                                <CheckCircle2 className='w-3.5 h-3.5 mr-1.5' />
+                              )}
+                              Accept
+                            </Button>
+                            <Button
+                              size='sm'
+                              variant='outline'
+                              className='h-8 border-rose-200/50 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/20'
+                              disabled={
+                                actionLoading === order.id ||
+                                !order.subOrders.every(
+                                  (s: any) => s.status !== "PENDING",
+                                )
+                              }
+                              onClick={() => setRejectDialogOrder(order.id)}
+                            >
+                              {actionLoading === order.id ? (
+                                <Loader2 className='w-3.5 h-3.5 animate-spin mr-1.5' />
+                              ) : (
+                                <XCircle className='w-3.5 h-3.5 mr-1.5' />
+                              )}
+                              Reject
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                       <div className='flex flex-col items-end'>
                         <span className='text-[10px] uppercase font-bold text-muted-foreground'>
                           Order Placed
@@ -246,15 +379,15 @@ export default function BrandOrdersPage() {
                           </div>
 
                           <div className='grid grid-cols-3 gap-1 p-3 rounded-xl bg-background/50 border border-border/40'>
-                            <div className='flex flex-col items-center justify-center'>
+                            <div className='flex flex-col items-center justify-center border-r border-border/50'>
                               <span className='text-[9px] font-bold text-muted-foreground uppercase'>
                                 Color
                               </span>
-                              <span className='text-sm font-semibold truncate max-w-full'>
+                              <span className='text-sm font-semibold truncate max-w-full px-1'>
                                 {sub.details.color}
                               </span>
                             </div>
-                            <div className='flex flex-col items-center justify-center border-x border-border/50'>
+                            <div className='flex flex-col items-center justify-center border-r border-border/50'>
                               <span className='text-[9px] font-bold text-muted-foreground uppercase'>
                                 Size
                               </span>
@@ -271,6 +404,15 @@ export default function BrandOrdersPage() {
                               </span>
                             </div>
                           </div>
+
+                          {sub.rejectionReason && (
+                            <div className='mt-4 pt-3 border-t border-border/40'>
+                              <p className='text-[10px] text-rose-600 leading-snug'>
+                                <span className='font-bold'>Rejection:</span>{" "}
+                                {sub.rejectionReason}
+                              </p>
+                            </div>
+                          )}
 
                           {sub.note && (
                             <div className='mt-4 pt-3 border-t border-border/40'>
@@ -305,6 +447,60 @@ export default function BrandOrdersPage() {
           </div>
         </div>
       )}
+
+      {/* Admin Rejection Dialog */}
+      <Dialog
+        open={!!rejectDialogOrder}
+        onOpenChange={(open) => !open && setRejectDialogOrder(null)}
+      >
+        <DialogContent className='sm:max-w-md'>
+          <DialogHeader>
+            <DialogTitle>Reject Order</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this production order. This
+              reason will be visible to the brand and manufacturers.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='grid gap-4 py-4'>
+            <div className='grid gap-2'>
+              <Label htmlFor='rejection-reason'>Reason for Rejection</Label>
+              <Input
+                id='rejection-reason'
+                placeholder='e.g., Incomplete specifications, Capacity full...'
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setRejectDialogOrder(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant='destructive'
+              disabled={
+                !rejectionReason.trim() || actionLoading === rejectDialogOrder
+              }
+              onClick={() =>
+                rejectDialogOrder &&
+                handleStatusUpdate(
+                  rejectDialogOrder,
+                  "CANCELLED",
+                  rejectionReason,
+                )
+              }
+            >
+              {actionLoading === rejectDialogOrder ? (
+                <Loader2 className='w-4 h-4 animate-spin mr-2' />
+              ) : null}
+              Confirm Rejection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

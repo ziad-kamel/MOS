@@ -23,7 +23,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,7 +36,12 @@ import {
   XCircle,
   Info,
   MessageSquare,
+  UserCircle,
+  Calendar,
+  Clock,
+  Boxes,
 } from "lucide-react";
+import Link from "next/link";
 
 type SubOrderWithDetails = Awaited<
   ReturnType<typeof getSubOrdersForManufacturer>
@@ -60,7 +64,8 @@ export default function ManufacturerHomePage() {
     setLoading(true);
     try {
       const data = await getSubOrdersForManufacturer(user.id);
-      setSubOrders(data);
+      // Only show PENDING sub-orders on Home page
+      setSubOrders(data.filter((so) => so.status === "PENDING"));
     } catch (error) {
       console.error("Failed to fetch sub-orders:", error);
     } finally {
@@ -74,7 +79,7 @@ export default function ManufacturerHomePage() {
 
   const handleAccept = async (id: string) => {
     try {
-      await updateSubOrderStatus(id, "ACCEPTED");
+      await updateSubOrderStatus(id, "PENDING_ADMIN_ACCEPT");
       fetchSubOrders();
     } catch (error) {
       console.error("Failed to accept sub-order:", error);
@@ -100,7 +105,6 @@ export default function ManufacturerHomePage() {
       await addSubOrderNote(id, newNote);
       setNewNote("");
       fetchSubOrders();
-      // If we are in details dialog, update the selected order too
       if (selectedOrder && selectedOrder.id === id) {
         setSelectedOrder({ ...selectedOrder, note: newNote });
       }
@@ -118,6 +122,15 @@ export default function ManufacturerHomePage() {
             className='bg-yellow-100 text-yellow-800 border-yellow-200'
           >
             Pending
+          </Badge>
+        );
+      case "PENDING_ADMIN_ACCEPT":
+        return (
+          <Badge
+            variant='secondary'
+            className='bg-orange-100 text-orange-800 border-orange-200'
+          >
+            Pending Admin Accept
           </Badge>
         );
       case "ACCEPTED":
@@ -164,22 +177,35 @@ export default function ManufacturerHomePage() {
 
   return (
     <div className='container mx-auto p-6 space-y-8'>
-      <div className='flex flex-col space-y-2'>
-        <h1 className='text-3xl font-bold tracking-tight'>
-          Manufacturer Dashboard
-        </h1>
-        <p className='text-muted-foreground'>
-          Manage your assigned orders and production status.
-        </p>
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+        <div className='flex flex-col space-y-2'>
+          <h1 className='text-3xl font-bold tracking-tight'>
+            Production Queue
+          </h1>
+          <p className='text-muted-foreground'>
+            New production requests awaiting your review and acceptance.
+          </p>
+        </div>
+        <Link href='/home/orders'>
+          <Button variant='outline' className='flex gap-2 items-center'>
+            <Boxes className='w-4 h-4' />
+            View Order History
+          </Button>
+        </Link>
       </div>
 
       {subOrders.length === 0 ? (
         <Card className='flex flex-col items-center justify-center p-12 text-center'>
           <Package className='h-12 w-12 text-muted-foreground mb-4' />
-          <CardTitle>No Orders Assigned</CardTitle>
+          <CardTitle>Queue Clear</CardTitle>
           <CardDescription>
-            You don't have any orders assigned to you at the moment.
+            You have no pending production requests at the moment.
           </CardDescription>
+          <div className='mt-6'>
+            <Link href='/home/orders'>
+              <Button variant='secondary'>Check Order History</Button>
+            </Link>
+          </div>
         </Card>
       ) : (
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
@@ -194,27 +220,63 @@ export default function ManufacturerHomePage() {
                 </CardTitle>
                 {getStatusBadge(subOrder.status)}
               </CardHeader>
-              <CardContent className='grow space-y-4'>
-                <div className='space-y-1'>
-                  <p className='text-sm font-medium text-muted-foreground'>
-                    Brand
-                  </p>
-                  <p className='text-base'>{subOrder.order.brand.user.id}</p>
+              <CardContent className='grow space-y-6'>
+                <div className='flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/10'>
+                  <div className='w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary'>
+                    <UserCircle className='w-4 h-4' />
+                  </div>
+                  <div className='flex flex-col'>
+                    <span className='text-[10px] font-bold text-muted-foreground uppercase leading-none mb-1'>
+                      Ordering Brand
+                    </span>
+                    <span className='text-sm font-bold'>
+                      {subOrder.order.brand.user.id.slice(0, 12)}...
+                    </span>
+                  </div>
                 </div>
-                <div className='space-y-1'>
-                  <p className='text-sm font-medium text-muted-foreground'>
-                    Details
-                  </p>
-                  <pre className='text-xs bg-muted p-2 rounded-md overflow-auto max-h-24'>
-                    {JSON.stringify(subOrder.details, null, 2)}
-                  </pre>
+
+                <div className='space-y-3'>
+                  <div className='flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground'>
+                    <Info className='w-3.5 h-3.5' />
+                    Specifications
+                  </div>
+                  <div className='grid grid-cols-2 gap-2'>
+                    {typeof subOrder.details === "object" &&
+                    subOrder.details !== null ? (
+                      Object.entries(
+                        subOrder.details as Record<string, any>,
+                      ).map(([key, value]) => (
+                        <div
+                          key={key}
+                          className='flex flex-col p-2.5 bg-muted/30 rounded-xl border border-border/50 transition-colors hover:bg-muted/50'
+                        >
+                          <span className='text-[9px] font-bold uppercase text-muted-foreground mb-0.5'>
+                            {key}
+                          </span>
+                          <span className='text-sm font-semibold capitalize'>
+                            {String(value)}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className='col-span-2 p-3 bg-muted/30 rounded-xl border border-border/50 text-sm'>
+                        {String(subOrder.details)}
+                      </div>
+                    )}
+                  </div>
                 </div>
+
                 {subOrder.note && (
-                  <div className='space-y-1'>
-                    <p className='text-sm font-medium text-muted-foreground'>
-                      Note
+                  <div className='relative p-4 rounded-xl bg-amber-500/5 border border-amber-500/10'>
+                    <div className='flex items-center gap-2 mb-1.5'>
+                      <MessageSquare className='w-3.5 h-3.5 text-amber-600' />
+                      <span className='text-[10px] font-bold uppercase text-amber-700'>
+                        Special Instructions
+                      </span>
+                    </div>
+                    <p className='text-xs text-foreground/80 leading-relaxed italic'>
+                      "{subOrder.note}"
                     </p>
-                    <p className='text-sm italic'>"{subOrder.note}"</p>
                   </div>
                 )}
               </CardContent>
@@ -311,20 +373,48 @@ export default function ManufacturerHomePage() {
           {selectedOrder && (
             <ScrollArea className='grow pr-4'>
               <div className='space-y-6 py-4'>
-                <div className='grid grid-cols-2 gap-4'>
-                  <div className='space-y-1'>
-                    <p className='text-sm font-medium text-muted-foreground uppercase tracking-wider'>
-                      Status
-                    </p>
-                    <div>{getStatusBadge(selectedOrder.status)}</div>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-6'>
+                  <div className='space-y-4'>
+                    <div className='bg-primary/5 p-4 rounded-2xl border border-primary/10 flex items-center gap-4'>
+                      <div className='w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary'>
+                        <UserCircle className='w-5 h-5' />
+                      </div>
+                      <div className='flex flex-col'>
+                        <span className='text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
+                          Brand Partner
+                        </span>
+                        <span className='text-sm font-bold'>
+                          {selectedOrder.order.brand.user.id}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className='space-y-1'>
-                    <p className='text-sm font-medium text-muted-foreground uppercase tracking-wider'>
-                      Date Created
-                    </p>
-                    <p>
-                      {new Date(selectedOrder.createdAt).toLocaleDateString()}
-                    </p>
+
+                  <div className='grid grid-cols-2 gap-4'>
+                    <div className='space-y-1.5'>
+                      <p className='text-[10px] font-bold text-muted-foreground uppercase tracking-widest'>
+                        Current Status
+                      </p>
+                      <div className='flex'>
+                        {getStatusBadge(selectedOrder.status)}
+                      </div>
+                    </div>
+                    <div className='space-y-1.5'>
+                      <p className='text-[10px] font-bold text-muted-foreground uppercase tracking-widest'>
+                        Submission Date
+                      </p>
+                      <div className='flex items-center gap-2 text-sm font-medium'>
+                        <Calendar className='w-3.5 h-3.5 text-primary' />
+                        {new Date(selectedOrder.createdAt).toLocaleDateString(
+                          undefined,
+                          {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -332,25 +422,34 @@ export default function ManufacturerHomePage() {
 
                 <div className='space-y-3'>
                   <h3 className='font-semibold text-lg flex items-center gap-2'>
-                    <Info className='h-4 w-4' /> Manufacturing Specification
+                    <Info className='h-4 w-4 text-primary' /> Manufacturing
+                    Specification
                   </h3>
-                  <div className='bg-muted p-4 rounded-lg'>
+                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2'>
+                    {/* @ts-ignore */}
                     {typeof selectedOrder.details === "object" &&
                     selectedOrder.details !== null ? (
-                      <div className='grid grid-cols-2 gap-y-2'>
-                        {Object.entries(selectedOrder.details).map(
-                          ([key, value]) => (
-                            <React.Fragment key={key}>
-                              <span className='font-medium capitalize'>
-                                {key}:
-                              </span>
-                              <span>{String(value)}</span>
-                            </React.Fragment>
-                          ),
-                        )}
-                      </div>
+                      Object.entries(
+                        selectedOrder.details as Record<string, any>,
+                      ).map(([key, value]) => (
+                        <div
+                          key={key}
+                          className='flex flex-col p-3 bg-muted/40 rounded-xl border border-border/50 transition-all hover:bg-muted/60'
+                        >
+                          <span className='text-[10px] font-bold uppercase text-muted-foreground mb-1'>
+                            {key}
+                          </span>
+                          <span className='text-sm font-semibold capitalize'>
+                            {String(value)}
+                          </span>
+                        </div>
+                      ))
                     ) : (
-                      <p>{String(selectedOrder.details)}</p>
+                      <div className='col-span-2 p-4 bg-muted/40 rounded-xl border border-border/50'>
+                        <p className='text-sm'>
+                          {String(selectedOrder.details)}
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>

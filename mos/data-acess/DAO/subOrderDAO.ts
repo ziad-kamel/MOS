@@ -47,20 +47,6 @@ export async function updateSubOrderStatus(
     },
   });
 
-  // If the status is ACCEPTED, check if all other sub-orders of this order are also ACCEPTED
-  if (status === "ACCEPTED" && updatedSubOrder.order) {
-    const allAccepted = updatedSubOrder.order.subOrders.every(
-      (so) => so.status === "ACCEPTED",
-    );
-
-    if (allAccepted) {
-      await prisma.order.update({
-        where: { id: updatedSubOrder.orderId },
-        data: { status: "ACCEPTED" },
-      });
-    }
-  }
-
   return updatedSubOrder;
 }
 

@@ -38,6 +38,55 @@ export async function getOrders(brandId: string) {
   });
 }
 
+export async function getAllOrders() {
+  return await prisma.order.findMany({
+    include: {
+      subOrders: true,
+      brand: {
+        include: {
+          user: true,
+        },
+      },
+    },
+  });
+}
+
+export async function updateOrderStatus(
+  orderId: string,
+  status: "ACCEPTED" | "CANCELLED",
+  adminId: string,
+  rejectionReason?: string,
+) {
+  return await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: status,
+      adminId: adminId,
+      subOrders:
+        status === "CANCELLED"
+          ? {
+              updateMany: {
+                where: {},
+                data: {
+                  rejectionReason: rejectionReason || "Rejected by Admin",
+                  status: "REJECTED",
+                },
+              },
+            }
+          : status === "ACCEPTED"
+            ? {
+                updateMany: {
+                  where: { status: "PENDING_ADMIN_ACCEPT" },
+                  data: {
+                    status: "ACCEPTED",
+                  },
+                },
+              }
+            : undefined,
+    },
+  });
+}
+
 export async function getLastOrder(brandId: string) {
   return await prisma.order.findFirst({
     where: {
@@ -49,6 +98,29 @@ export async function getLastOrder(brandId: string) {
     },
     orderBy: {
       createdAt: "desc",
+    },
+  });
+}
+export async function getOrdersByManufacturer(manufacturerId: string) {
+  return await prisma.order.findMany({
+    where: {
+      subOrders: {
+        some: {
+          manufacturerId: manufacturerId,
+        },
+      },
+    },
+    include: {
+      subOrders: {
+        where: {
+          manufacturerId: manufacturerId,
+        },
+      },
+      brand: {
+        include: {
+          user: true,
+        },
+      },
     },
   });
 }
