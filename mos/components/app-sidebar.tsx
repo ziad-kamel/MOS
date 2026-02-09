@@ -17,6 +17,9 @@ import {
   SquareTerminal,
   UserCircle,
   ShieldAlert,
+  Trophy,
+  ShieldXIcon,
+  ShieldUser,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -70,7 +73,14 @@ export function AppSidebar() {
     data.navMain.push({
       title: "Admins",
       url: "/home/admins",
-      icon: ShieldAlert,
+      icon: ShieldUser,
+    });
+  }
+  if (user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") {
+    data.navMain.push({
+      title: "Ranks",
+      url: "/home/ranks",
+      icon: Trophy,
     });
   }
   return (

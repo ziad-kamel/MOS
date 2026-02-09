@@ -16,3 +16,12 @@ export async function deleteBrand(id: string) {
     where: { id: id },
   });
 }
+
+export async function updateBrandRank(brandId: string, rankId: string) {
+  return await prisma.brand.update({
+    where: { id: brandId },
+    data: {
+      rankId: rankId,
+    },
+  });
+}

@@ -1,9 +1,29 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getManufacturers, deleteManufacturer } from "@/data-acess/DAO/manDAO";
+import {
+  getManufacturers,
+  deleteManufacturer,
+  updateManufacturerRank,
+} from "@/data-acess/DAO/manDAO";
+import { getRanks } from "@/data-acess/DAO/rankDAO";
 import { useUser } from "@/providers/user-provider";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -24,6 +44,7 @@ import {
   Info,
   Trash2,
   Loader2,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -48,22 +69,58 @@ const CustomBadge = ({
 export default function ManufacturersPage() {
   const { user } = useUser();
   const [manufacturers, setManufacturers] = useState<any[]>([]);
+  const [ranks, setRanks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [isRankDialogOpen, setIsRankDialogOpen] = useState(false);
+  const [selectedManufacturer, setSelectedManufacturer] = useState<any | null>(
+    null,
+  );
+  const [newRankId, setNewRankId] = useState<string>("");
 
   useEffect(() => {
-    async function fetchManufacturers() {
+    async function fetchData() {
       try {
-        const data = await getManufacturers();
-        setManufacturers(data);
+        const [manData, ranksData] = await Promise.all([
+          getManufacturers(),
+          getRanks(),
+        ]);
+        setManufacturers(manData);
+        setRanks(ranksData);
       } catch (error) {
-        console.error("Failed to fetch manufacturers:", error);
+        console.error("Failed to fetch data:", error);
       } finally {
         setLoading(false);
       }
     }
-    fetchManufacturers();
+    fetchData();
   }, []);
+
+  const handleUpdateRank = async () => {
+    if (!selectedManufacturer || !newRankId) return;
+
+    setActionLoading("updating-rank");
+    try {
+      await updateManufacturerRank(selectedManufacturer.id, newRankId);
+      setManufacturers((prev) =>
+        prev.map((m) =>
+          m.id === selectedManufacturer.id
+            ? {
+                ...m,
+                rankId: newRankId,
+                rank: ranks.find((r) => r.id === newRankId),
+              }
+            : m,
+        ),
+      );
+      setIsRankDialogOpen(false);
+      setSelectedManufacturer(null);
+    } catch (error) {
+      console.error("Failed to update rank:", error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const handleDeleteManufacturer = async (manId: string) => {
     if (
@@ -98,6 +155,10 @@ export default function ManufacturersPage() {
         return "bg-primary/5 text-primary border-primary/20";
     }
   };
+
+  if (user?.role !== "ADMIN" && user?.role !== "SUPER_ADMIN") {
+    return <div className='p-8'>Access Denied</div>;
+  }
 
   return (
     <div className='p-8 space-y-10 max-w-7xl mx-auto min-h-screen'>
@@ -151,19 +212,28 @@ export default function ManufacturersPage() {
                     <div className='p-3 rounded-2xl bg-primary/5 group-hover:bg-primary/10 transition-colors'>
                       <Factory className='w-6 h-6 text-primary' />
                     </div>
-                    <CustomBadge
-                      className={cn(
-                        "flex items-center gap-1.5 shadow-sm",
-                        getRankStyles(man.rank.name),
-                      )}
+                    <button
+                      onClick={() => {
+                        setSelectedManufacturer(man);
+                        setNewRankId(man.rankId);
+                        setIsRankDialogOpen(true);
+                      }}
+                      className='transition-all hover:scale-105 active:scale-95'
                     >
-                      <Trophy className='w-3 h-3' />
-                      {man.rank.name}
-                    </CustomBadge>
+                      <CustomBadge
+                        className={cn(
+                          "flex items-center gap-1.5 shadow-sm cursor-pointer hover:shadow-md",
+                          getRankStyles(man.rank.name),
+                        )}
+                      >
+                        <Trophy className='w-3 h-3' />
+                        {man.rank.name}
+                      </CustomBadge>
+                    </button>
                   </div>
                   <div className='mt-4 space-y-1'>
                     <CardTitle className='text-xl font-bold'>
-                      Facility Info
+                      {man.user?.name || "Facility Info"}
                     </CardTitle>
                     <CardDescription className='font-mono text-[10px] uppercase tracking-widest'>
                       ID: {man.id.slice(0, 16)}...
@@ -172,6 +242,12 @@ export default function ManufacturersPage() {
                 </CardHeader>
 
                 <CardContent className='grow space-y-6 pt-0'>
+                  <div className='flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/20 group-hover:bg-muted/50 transition-colors'>
+                    <Mail className='w-4 h-4 text-muted-foreground' />
+                    <span className='text-sm font-medium truncate'>
+                      {man.user?.email || "No email provided"}
+                    </span>
+                  </div>
                   <div className='space-y-4'>
                     <div className='flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/20 group-hover:bg-muted/50 transition-colors'>
                       <MapPin className='w-4 h-4 text-muted-foreground mt-0.5' />
@@ -229,21 +305,24 @@ export default function ManufacturersPage() {
                         </button>
                       </div>
 
-                      {user?.role === "SUPER_ADMIN" && (
-                        <Button
-                          size='sm'
-                          variant='ghost'
-                          className='w-full mt-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-100'
-                          onClick={() => handleDeleteManufacturer(man.id)}
-                          disabled={actionLoading === man.id}
-                        >
-                          {actionLoading === man.id ? (
-                            <Loader2 className='w-3.5 h-3.5 animate-spin mr-1.5' />
-                          ) : (
-                            <Trash2 className='w-3.5 h-3.5 mr-1.5' />
-                          )}
-                          Delete Partner
-                        </Button>
+                      {(user?.role === "ADMIN" ||
+                        user?.role === "SUPER_ADMIN") && (
+                        <div className='flex gap-2 w-full mt-2'>
+                          <div className='grow' />
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            className='text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-100'
+                            onClick={() => handleDeleteManufacturer(man.id)}
+                            disabled={actionLoading === man.id}
+                          >
+                            {actionLoading === man.id ? (
+                              <Loader2 className='w-3.5 h-3.5 animate-spin' />
+                            ) : (
+                              <Trash2 className='w-3.5 h-3.5' />
+                            )}
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -268,6 +347,54 @@ export default function ManufacturersPage() {
           </div>
         </div>
       )}
+      <Dialog open={isRankDialogOpen} onOpenChange={setIsRankDialogOpen}>
+        <DialogContent className='sm:max-w-[425px]'>
+          <DialogHeader>
+            <DialogTitle>Change Manufacturer Rank</DialogTitle>
+            <DialogDescription>
+              Assign a new rank to this production partner.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='grid gap-4 py-4'>
+            <div className='space-y-2'>
+              <label className='text-sm font-medium'>Select Rank</label>
+              <Select value={newRankId} onValueChange={setNewRankId}>
+                <SelectTrigger>
+                  <SelectValue placeholder='Select a rank' />
+                </SelectTrigger>
+                <SelectContent>
+                  {ranks.map((rank) => (
+                    <SelectItem key={rank.id} value={rank.id}>
+                      {rank.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setIsRankDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateRank}
+              disabled={actionLoading === "updating-rank"}
+            >
+              {actionLoading === "updating-rank" ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Updating...
+                </>
+              ) : (
+                "Update Rank"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -31,6 +31,9 @@ export default function SubOrderMenu({
   const [color, setColor] = useState("");
   const [size, setSize] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [selectedManufacturerLimit, setSelectedManufacturerLimit] = useState<
+    number | null
+  >(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSave = () => {
@@ -58,6 +61,7 @@ export default function SubOrderMenu({
 
     // Reset state
     setManufacturerId("");
+    setSelectedManufacturerLimit(null);
     setNote("");
     setColor("");
     setSize("");
@@ -65,6 +69,9 @@ export default function SubOrderMenu({
     setErrors({});
     setOpen(false);
   };
+
+  const showLimitWarning =
+    selectedManufacturerLimit !== null && quantity > selectedManufacturerLimit;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -87,6 +94,7 @@ export default function SubOrderMenu({
                 setManufacturerId(val);
                 setErrors((prev) => ({ ...prev, manufacturerId: "" }));
               }}
+              onSelect={(m) => setSelectedManufacturerLimit(m.limitPerOrder)}
             />
             {errors["manufacturerId"] && (
               <FieldError>{errors["manufacturerId"]}</FieldError>
@@ -131,6 +139,13 @@ export default function SubOrderMenu({
                 setErrors((prev) => ({ ...prev, "details.quantity": "" }));
               }}
             />
+            {showLimitWarning && (
+              <p className='text-[13px] text-amber-600 font-medium mt-1 leading-tight'>
+                The selected manufacturer has a limit of{" "}
+                {selectedManufacturerLimit} units. Either select another
+                manufacturer with a higher limit or decrease the amount.
+              </p>
+            )}
             {errors["details.quantity"] && (
               <FieldError>{errors["details.quantity"]}</FieldError>
             )}
@@ -148,7 +163,9 @@ export default function SubOrderMenu({
           <DialogClose asChild>
             <Button variant='outline'>Cancel</Button>
           </DialogClose>
-          <Button onClick={handleSave}>Add to Order</Button>
+          <Button onClick={handleSave} disabled={showLimitWarning}>
+            Add to Order
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

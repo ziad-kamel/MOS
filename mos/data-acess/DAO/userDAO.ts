@@ -27,6 +27,7 @@ export async function registerNewBrand(
   data: z.infer<typeof registerBrandSchema>,
 ) {
   const { supabaseUser } = await authenticateUser();
+  const basicRankId = await getBasicRank();
   await prisma.user.create({
     data: {
       id: supabaseUser.id,
@@ -36,7 +37,7 @@ export async function registerNewBrand(
           warehouseAddress: data.warehouseAddress,
           contactNo1: data.contactNo1,
           contactNo2: data.contactNo2 || "",
-          rankId: "2b84dce5-3877-4d91-a6c7-770c702bce22",
+          rankId: basicRankId?.id!,
         },
       },
     },
@@ -48,6 +49,7 @@ export async function registerNewManufacturer(
   data: z.infer<typeof registerManufacturerSchema>,
 ) {
   const { supabaseUser } = await authenticateUser();
+  const basicRankId = await getBasicRank();
   await prisma.user.create({
     data: {
       id: supabaseUser.id,
@@ -58,7 +60,7 @@ export async function registerNewManufacturer(
           factoryAddress: data.factoryAddress,
           contactNo1: data.contactNo1,
           contactNo2: data.contactNo2 || "",
-          rankId: "2b84dce5-3877-4d91-a6c7-770c702bce22",
+          rankId: basicRankId?.id!,
         },
       },
     },
@@ -68,6 +70,7 @@ export async function registerNewManufacturer(
 
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { getBasicRank } from "./rankDAO";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

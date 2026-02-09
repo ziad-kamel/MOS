@@ -20,7 +20,7 @@ export const OrderStatusEnum = z.enum([
 export const rankSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1, "Rank name is required"),
-  amount: z.number().int().nonnegative().default(0),
+  amount: z.number().int().nonnegative(),
 });
 
 export const userSchema = z.object({

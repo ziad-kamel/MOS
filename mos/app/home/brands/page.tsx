@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getBrands, deleteBrand } from "@/data-acess/DAO/brandDAO";
+import {
+  getBrands,
+  deleteBrand,
+  updateBrandRank,
+} from "@/data-acess/DAO/brandDAO";
+import { getRanks } from "@/data-acess/DAO/rankDAO";
 import {
   Card,
   CardContent,
@@ -20,10 +25,26 @@ import {
   Trash2,
   Loader2,
   Package,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/providers/user-provider";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const CustomBadge = ({
   children,
@@ -45,22 +66,56 @@ const CustomBadge = ({
 export default function BrandsPage() {
   const { user } = useUser();
   const [brands, setBrands] = useState<any[]>([]);
+  const [ranks, setRanks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [isRankDialogOpen, setIsRankDialogOpen] = useState(false);
+  const [selectedBrand, setSelectedBrand] = useState<any | null>(null);
+  const [newRankId, setNewRankId] = useState<string>("");
 
   useEffect(() => {
-    async function fetchBrands() {
+    async function fetchData() {
       try {
-        const data = await getBrands();
-        setBrands(data);
+        const [brandsData, ranksData] = await Promise.all([
+          getBrands(),
+          getRanks(),
+        ]);
+        setBrands(brandsData);
+        setRanks(ranksData);
       } catch (error) {
-        console.error("Failed to fetch brands:", error);
+        console.error("Failed to fetch data:", error);
       } finally {
         setLoading(false);
       }
     }
-    fetchBrands();
+    fetchData();
   }, []);
+
+  const handleUpdateRank = async () => {
+    if (!selectedBrand || !newRankId) return;
+
+    setActionLoading("updating-rank");
+    try {
+      await updateBrandRank(selectedBrand.id, newRankId);
+      setBrands((prev) =>
+        prev.map((b) =>
+          b.id === selectedBrand.id
+            ? {
+                ...b,
+                rankId: newRankId,
+                rank: ranks.find((r) => r.id === newRankId),
+              }
+            : b,
+        ),
+      );
+      setIsRankDialogOpen(false);
+      setSelectedBrand(null);
+    } catch (error) {
+      console.error("Failed to update rank:", error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const handleDeleteBrand = async (brandId: string) => {
     if (
@@ -94,7 +149,7 @@ export default function BrandsPage() {
     }
   };
 
-  if (user?.role !== "SUPER_ADMIN") {
+  if (user?.role !== "ADMIN" && user?.role !== "SUPER_ADMIN") {
     return <div className='p-8'>Access Denied</div>;
   }
 
@@ -149,19 +204,28 @@ export default function BrandsPage() {
                   <div className='p-3 rounded-2xl bg-primary/5 group-hover:bg-primary/10 transition-colors'>
                     <Package className='w-6 h-6 text-primary' />
                   </div>
-                  <CustomBadge
-                    className={cn(
-                      "flex items-center gap-1.5 shadow-sm",
-                      getRankStyles(brand.rank.name),
-                    )}
+                  <button
+                    onClick={() => {
+                      setSelectedBrand(brand);
+                      setNewRankId(brand.rankId);
+                      setIsRankDialogOpen(true);
+                    }}
+                    className='transition-all hover:scale-105 active:scale-95'
                   >
-                    <Trophy className='w-3 h-3' />
-                    {brand.rank.name}
-                  </CustomBadge>
+                    <CustomBadge
+                      className={cn(
+                        "flex items-center gap-1.5 shadow-sm cursor-pointer hover:shadow-md",
+                        getRankStyles(brand.rank.name),
+                      )}
+                    >
+                      <Trophy className='w-3 h-3' />
+                      {brand.rank.name}
+                    </CustomBadge>
+                  </button>
                 </div>
                 <div className='mt-4 space-y-1'>
                   <CardTitle className='text-xl font-bold'>
-                    Brand Partner
+                    {brand.user?.name || "Brand Partner"}
                   </CardTitle>
                   <CardDescription className='font-mono text-[10px] uppercase tracking-widest'>
                     ID: {brand.id.slice(0, 16)}...
@@ -170,6 +234,12 @@ export default function BrandsPage() {
               </CardHeader>
 
               <CardContent className='grow space-y-4 pt-0'>
+                <div className='flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/20 group-hover:bg-muted/50 transition-colors'>
+                  <Mail className='w-4 h-4 text-muted-foreground' />
+                  <span className='text-sm font-medium truncate'>
+                    {brand.user?.email || "No email provided"}
+                  </span>
+                </div>
                 <div className='flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/20'>
                   <MapPin className='w-4 h-4 text-muted-foreground mt-0.5' />
                   <div className='space-y-1'>
@@ -192,7 +262,8 @@ export default function BrandsPage() {
                   <p className='text-sm font-bold'>{brand.contactNo1}</p>
                 </div>
 
-                <div className='pt-4 border-t border-border/40 flex items-center justify-between'>
+                <div className='pt-4 border-t border-border/40 flex items-center justify-between gap-2'>
+                  <div className='grow' />
                   <Button
                     size='sm'
                     variant='ghost'
@@ -201,11 +272,10 @@ export default function BrandsPage() {
                     disabled={actionLoading === brand.id}
                   >
                     {actionLoading === brand.id ? (
-                      <Loader2 className='w-3.5 h-3.5 animate-spin mr-1.5' />
+                      <Loader2 className='w-3.5 h-3.5 animate-spin' />
                     ) : (
-                      <Trash2 className='w-3.5 h-3.5 mr-1.5' />
+                      <Trash2 className='w-3.5 h-3.5' />
                     )}
-                    Terminate Partner
                   </Button>
                 </div>
               </CardContent>
@@ -218,6 +288,54 @@ export default function BrandsPage() {
           <h3 className='text-2xl font-bold mt-4'>No brands registered</h3>
         </div>
       )}
+      <Dialog open={isRankDialogOpen} onOpenChange={setIsRankDialogOpen}>
+        <DialogContent className='sm:max-w-[425px]'>
+          <DialogHeader>
+            <DialogTitle>Change Brand Rank</DialogTitle>
+            <DialogDescription>
+              Assign a new rank to this brand partner.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='grid gap-4 py-4'>
+            <div className='space-y-2'>
+              <label className='text-sm font-medium'>Select Rank</label>
+              <Select value={newRankId} onValueChange={setNewRankId}>
+                <SelectTrigger>
+                  <SelectValue placeholder='Select a rank' />
+                </SelectTrigger>
+                <SelectContent>
+                  {ranks.map((rank) => (
+                    <SelectItem key={rank.id} value={rank.id}>
+                      {rank.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setIsRankDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateRank}
+              disabled={actionLoading === "updating-rank"}
+            >
+              {actionLoading === "updating-rank" ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Updating...
+                </>
+              ) : (
+                "Update Rank"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

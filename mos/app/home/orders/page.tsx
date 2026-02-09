@@ -359,6 +359,30 @@ export default function OrdersPage() {
                             </div>
                           </div>
                         )}
+                      {user?.role === "BRAND" && order.status === "PENDING" && (
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='h-8 border-rose-200/50 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/20'
+                          disabled={actionLoading === order.id}
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                "Are you sure you want to cancel this order? This action cannot be undone.",
+                              )
+                            ) {
+                              handleStatusUpdate(order.id, "CANCELLED");
+                            }
+                          }}
+                        >
+                          {actionLoading === order.id ? (
+                            <Loader2 className='w-3.5 h-3.5 animate-spin mr-1.5' />
+                          ) : (
+                            <XCircle className='w-3.5 h-3.5 mr-1.5' />
+                          )}
+                          Cancel Order
+                        </Button>
+                      )}
 
                       {user?.role === "SUPER_ADMIN" && (
                         <Button

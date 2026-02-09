@@ -15,6 +15,7 @@ import { getManufacturers } from "@/data-acess/DAO/manDAO";
 interface Manufacturer {
   id: string;
   factoryAddress: string;
+  limitPerOrder: number;
   rank: {
     name: string;
   };
@@ -23,9 +24,11 @@ interface Manufacturer {
 export default function ManufacturerSelector({
   value,
   onValueChange,
+  onSelect,
 }: {
   value?: string;
   onValueChange?: (value: string) => void;
+  onSelect?: (manufacturer: Manufacturer) => void;
 }) {
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,7 +55,13 @@ export default function ManufacturerSelector({
     <Select
       onOpenChange={handleOpenChange}
       value={value}
-      onValueChange={onValueChange}
+      onValueChange={(val) => {
+        onValueChange?.(val);
+        const selected = manufacturers.find((m) => m.id === val);
+        if (selected) {
+          onSelect?.(selected);
+        }
+      }}
       name='manufacturerId'
     >
       <SelectTrigger className='w-full max-w-48'>
@@ -78,7 +87,7 @@ export default function ManufacturerSelector({
           )}
           {manufacturers.map((m) => (
             <SelectItem key={m.id} value={m.id}>
-              {m.factoryAddress} ({m.rank.name})
+              {m.factoryAddress} ({m.rank.name}) - Limit: {m.limitPerOrder}
             </SelectItem>
           ))}
         </SelectGroup>

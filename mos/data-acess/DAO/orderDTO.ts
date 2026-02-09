@@ -68,7 +68,8 @@ export async function updateOrderStatus(
               updateMany: {
                 where: {},
                 data: {
-                  rejectionReason: rejectionReason || "Rejected by Admin",
+                  rejectionReason:
+                    rejectionReason || "Cancelled by Partner/Admin",
                   status: "REJECTED",
                 },
               },

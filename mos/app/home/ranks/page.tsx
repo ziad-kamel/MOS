@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getAdmins, createAdmin, deleteAdmin } from "@/data-acess/DAO/adminDAO";
+import {
+  getRanks,
+  createRank,
+  deleteRank,
+  updateRank,
+} from "@/data-acess/DAO/rankDAO";
 import { useUser } from "@/providers/user-provider";
 import {
   Card,
@@ -12,14 +17,14 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
-  ShieldAlert,
-  UserPlus,
+  BookOpen,
+  Plus,
   Trash2,
   Loader2,
-  Mail,
-  User as UserIcon,
+  Trophy,
   ShieldCheck,
-  Search,
+  AlertCircle,
+  Hash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,88 +40,102 @@ import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { createAdminSchema } from "@/lib/schemas";
+import { rankSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
-type CreateAdminFormValues = z.infer<typeof createAdminSchema>;
+type RankFormValues = z.infer<typeof rankSchema>;
 
-export default function AdminsPage() {
+export default function RanksPage() {
   const { user } = useUser();
-  const [admins, setAdmins] = useState<any[]>([]);
+  const [ranks, setRanks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingRank, setEditingRank] = useState<any | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const form = useForm<CreateAdminFormValues>({
-    resolver: zodResolver(createAdminSchema),
+  const form = useForm<RankFormValues>({
+    resolver: zodResolver(rankSchema),
     defaultValues: {
-      email: "",
-      password: "",
       name: "",
+      amount: 0,
     },
   });
 
   useEffect(() => {
-    async function fetchAdmins() {
+    async function fetchRanks() {
       try {
-        const data = await getAdmins();
-        setAdmins(data);
+        const data = await getRanks();
+        setRanks(data);
       } catch (error) {
-        console.error("Failed to fetch admins:", error);
+        console.error("Failed to fetch ranks:", error);
       } finally {
         setLoading(false);
       }
     }
-    if (user?.role === "SUPER_ADMIN") {
-      fetchAdmins();
+    if (user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") {
+      fetchRanks();
     }
   }, [user]);
 
-  const onSubmit = async (data: CreateAdminFormValues) => {
+  useEffect(() => {
+    if (editingRank) {
+      form.reset({
+        name: editingRank.name,
+        amount: editingRank.amount,
+      });
+    } else {
+      form.reset({
+        name: "",
+        amount: 0,
+      });
+    }
+  }, [editingRank, form]);
+
+  const onSubmit = async (data: RankFormValues) => {
     setErrorMessage(null);
-    setActionLoading("creating");
+    setActionLoading(editingRank ? "updating" : "creating");
     try {
-      await createAdmin(data);
-      setIsCreateDialogOpen(false);
+      if (editingRank) {
+        await updateRank(editingRank.id, data);
+      } else {
+        await createRank(data);
+      }
+      setIsDialogOpen(false);
+      setEditingRank(null);
       form.reset();
-      // Refresh list
-      const updatedAdmins = await getAdmins();
-      setAdmins(updatedAdmins);
+      const updatedRanks = await getRanks();
+      setRanks(updatedRanks);
     } catch (error: any) {
-      setErrorMessage(error.message || "Failed to create admin");
+      setErrorMessage(error.message || "Failed to save rank");
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleDeleteAdmin = async (id: string, name: string) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete admin "${name}"? This will also remove their Supabase Auth account. This action cannot be undone.`,
-      )
-    )
+  const handleDeleteRank = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete rank "${name}"?`))
       return;
 
     setActionLoading(id);
     try {
-      await deleteAdmin(id);
-      setAdmins((prev) => prev.filter((a) => a.user.id !== id));
-    } catch (error) {
-      console.error("Failed to delete admin:", error);
+      await deleteRank(id);
+      setRanks((prev) => prev.filter((r) => r.id !== id));
+    } catch (error: any) {
+      alert(error.message);
     } finally {
       setActionLoading(null);
     }
   };
 
-  if (user?.role !== "SUPER_ADMIN") {
+  if (user?.role !== "ADMIN" && user?.role !== "SUPER_ADMIN") {
     return (
       <div className='flex items-center justify-center min-h-screen'>
         <div className='text-center space-y-4'>
-          <ShieldAlert className='w-16 h-16 text-rose-500 mx-auto' />
+          <AlertCircle className='w-16 h-16 text-rose-500 mx-auto' />
           <h1 className='text-2xl font-bold'>Access Denied</h1>
           <p className='text-muted-foreground'>
-            Only Super Admins can access this page.
+            Only admins can access this page.
           </p>
         </div>
       </div>
@@ -128,23 +147,26 @@ export default function AdminsPage() {
       <div className='flex flex-col md:flex-row md:items-end justify-between gap-4'>
         <div className='space-y-2'>
           <div className='flex items-center gap-2 text-primary font-medium text-sm'>
-            <ShieldCheck className='w-4 h-4' />
-            <span>Core Administration</span>
+            <Trophy className='w-4 h-4' />
+            <span>Classification System</span>
           </div>
           <h1 className='text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-foreground to-foreground/70'>
-            Admin Management
+            Rank Management
           </h1>
           <p className='text-muted-foreground text-lg'>
-            Control system access by managing administrator accounts.
+            Define and manage tiers for brands and manufacturers.
           </p>
         </div>
 
         <Button
-          onClick={() => setIsCreateDialogOpen(true)}
+          onClick={() => {
+            setEditingRank(null);
+            setIsDialogOpen(true);
+          }}
           className='flex items-center gap-2 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95'
         >
-          <UserPlus className='w-4 h-4' />
-          Create New Admin
+          <Plus className='w-4 h-4' />
+          Add New Rank
         </Button>
       </div>
 
@@ -159,27 +181,27 @@ export default function AdminsPage() {
             />
           ))}
         </div>
-      ) : admins.length > 0 ? (
+      ) : ranks.length > 0 ? (
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
-          {admins.map((admin) => (
+          {ranks.map((rank) => (
             <Card
-              key={admin.id}
+              key={rank.id}
               className='group relative border-border/50 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 bg-card rounded-2xl'
             >
-              <div className='absolute top-2 right-2'>
+              <div className='absolute top-4 right-4'>
                 <ShieldCheck className='w-5 h-5 text-emerald-500 opacity-20 group-hover:opacity-100 transition-opacity' />
               </div>
               <CardHeader>
                 <div className='flex items-center gap-4'>
                   <div className='w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary'>
-                    <UserIcon className='w-6 h-6' />
+                    <Trophy className='w-6 h-6' />
                   </div>
                   <div className='space-y-1'>
                     <CardTitle className='text-xl font-bold'>
-                      {admin.user.name || "Administrator"}
+                      {rank.name}
                     </CardTitle>
                     <CardDescription className='font-mono text-[10px] uppercase tracking-widest'>
-                      ID: {admin.user.id.slice(0, 16)}...
+                      ID: {rank.id.slice(0, 16)}...
                     </CardDescription>
                   </div>
                 </div>
@@ -187,30 +209,36 @@ export default function AdminsPage() {
 
               <CardContent className='space-y-6'>
                 <div className='flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/20 group-hover:bg-muted/50 transition-colors'>
-                  <Mail className='w-4 h-4 text-muted-foreground' />
-                  <span className='text-sm font-medium truncate'>
-                    {admin.user.email}
+                  <Hash className='w-4 h-4 text-muted-foreground' />
+                  <span className='text-sm font-medium'>
+                    Amount:{" "}
+                    <span className='text-primary font-bold'>
+                      {rank.amount}
+                    </span>
                   </span>
                 </div>
 
                 <div className='pt-4 border-t border-border/40 flex items-center justify-between'>
-                  <div className='flex items-center gap-2'>
-                    <div className='w-2 h-2 rounded-full bg-emerald-500 animate-pulse' />
-                    <span className='text-[10px] font-bold uppercase text-muted-foreground'>
-                      Status: Active
-                    </span>
-                  </div>
+                  <Button
+                    size='sm'
+                    variant='ghost'
+                    className='text-primary hover:bg-primary/10'
+                    onClick={() => {
+                      setEditingRank(rank);
+                      setIsDialogOpen(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
 
                   <Button
                     size='sm'
                     variant='ghost'
                     className='text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-100 h-8 px-2'
-                    onClick={() =>
-                      handleDeleteAdmin(admin.user.id, admin.user.name)
-                    }
-                    disabled={actionLoading === admin.user.id}
+                    onClick={() => handleDeleteRank(rank.id, rank.name)}
+                    disabled={actionLoading === rank.id}
                   >
-                    {actionLoading === admin.user.id ? (
+                    {actionLoading === rank.id ? (
                       <Loader2 className='w-3.5 h-3.5 animate-spin' />
                     ) : (
                       <>
@@ -226,31 +254,38 @@ export default function AdminsPage() {
         </div>
       ) : (
         <div className='flex flex-col items-center justify-center p-24 bg-muted/20 text-center rounded-3xl border-2 border-dashed'>
-          <ShieldAlert className='w-12 h-12 text-muted-foreground mb-4' />
-          <h3 className='text-2xl font-bold'>No admins found</h3>
+          <Trophy className='w-12 h-12 text-muted-foreground mb-4' />
+          <h3 className='text-2xl font-bold'>No ranks found</h3>
           <p className='text-muted-foreground max-w-sm mx-auto mt-2'>
-            There are currently no additional administrators in the system.
+            There are currently no ranks defined in the system.
           </p>
           <Button
-            onClick={() => setIsCreateDialogOpen(true)}
+            onClick={() => setIsDialogOpen(true)}
             variant='outline'
             className='mt-6'
           >
-            Create the first Admin
+            Create the first Rank
           </Button>
         </div>
       )}
 
-      {/* Create Admin Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+      {/* Rank Dialog */}
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) setEditingRank(null);
+        }}
+      >
         <DialogContent className='sm:max-w-[425px] overflow-hidden rounded-3xl'>
           <DialogHeader>
             <DialogTitle className='text-2xl font-bold'>
-              Register New Admin
+              {editingRank ? "Edit Rank" : "Add New Rank"}
             </DialogTitle>
             <DialogDescription>
-              Create a new administrator account. They will have full access to
-              manage orders and partners.
+              {editingRank
+                ? "Update the details of the existing rank."
+                : "Create a new rank category for users."}
             </DialogDescription>
           </DialogHeader>
 
@@ -270,17 +305,14 @@ export default function AdminsPage() {
                   htmlFor='name'
                   className='text-sm font-bold uppercase tracking-wider text-muted-foreground'
                 >
-                  Full Name
+                  Rank Name
                 </Label>
-                <div className='relative'>
-                  <UserIcon className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground' />
-                  <Input
-                    id='name'
-                    placeholder='John Doe'
-                    className='pl-10 h-11 rounded-xl bg-muted/40 border-border/50 focus:ring-primary/20 transition-all font-medium'
-                    {...form.register("name")}
-                  />
-                </div>
+                <Input
+                  id='name'
+                  placeholder='e.g. Gold, Tier 1'
+                  className='h-11 rounded-xl bg-muted/40 border-border/50 focus:ring-primary/20 transition-all font-medium'
+                  {...form.register("name")}
+                />
                 {form.formState.errors.name && (
                   <p className='text-xs text-rose-500 font-bold uppercase'>
                     {form.formState.errors.name.message}
@@ -290,45 +322,21 @@ export default function AdminsPage() {
 
               <div className='space-y-2'>
                 <Label
-                  htmlFor='email'
+                  htmlFor='amount'
                   className='text-sm font-bold uppercase tracking-wider text-muted-foreground'
                 >
-                  Email Address
-                </Label>
-                <div className='relative'>
-                  <Mail className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground' />
-                  <Input
-                    id='email'
-                    type='email'
-                    placeholder='admin@khonsu.mos'
-                    className='pl-10 h-11 rounded-xl bg-muted/40 border-border/50 focus:ring-primary/20 transition-all font-medium'
-                    {...form.register("email")}
-                  />
-                </div>
-                {form.formState.errors.email && (
-                  <p className='text-xs text-rose-500 font-bold uppercase'>
-                    {form.formState.errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              <div className='space-y-2'>
-                <Label
-                  htmlFor='password'
-                  className='text-sm font-bold uppercase tracking-wider text-muted-foreground'
-                >
-                  Temporary Password
+                  Amount (Threshold/Value)
                 </Label>
                 <Input
-                  id='password'
-                  type='password'
-                  placeholder='••••••••'
+                  id='amount'
+                  type='number'
+                  placeholder='0'
                   className='h-11 rounded-xl bg-muted/40 border-border/50 focus:ring-primary/20 transition-all font-medium'
-                  {...form.register("password")}
+                  {...form.register("amount", { valueAsNumber: true })}
                 />
-                {form.formState.errors.password && (
+                {form.formState.errors.amount && (
                   <p className='text-xs text-rose-500 font-bold uppercase'>
-                    {form.formState.errors.password.message}
+                    {form.formState.errors.amount.message}
                   </p>
                 )}
               </div>
@@ -338,23 +346,29 @@ export default function AdminsPage() {
               <Button
                 type='button'
                 variant='ghost'
-                onClick={() => setIsCreateDialogOpen(false)}
+                onClick={() => {
+                  setIsDialogOpen(false);
+                  setEditingRank(null);
+                }}
                 className='rounded-xl'
               >
                 Cancel
               </Button>
               <Button
                 type='submit'
-                disabled={actionLoading === "creating"}
+                disabled={!!actionLoading}
                 className='min-w-[120px] shadow-lg shadow-primary/20 rounded-xl h-10'
               >
-                {actionLoading === "creating" ? (
+                {actionLoading === "creating" ||
+                actionLoading === "updating" ? (
                   <>
                     <Loader2 className='w-4 h-4 animate-spin mr-2' />
-                    Creating...
+                    Saving...
                   </>
+                ) : editingRank ? (
+                  "Update Rank"
                 ) : (
-                  "Create Admin"
+                  "Create Rank"
                 )}
               </Button>
             </DialogFooter>
