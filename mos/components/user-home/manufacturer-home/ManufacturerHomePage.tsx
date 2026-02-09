@@ -7,6 +7,7 @@ import {
   updateSubOrderStatus,
   addSubOrderNote,
 } from "@/data-acess/DAO/subOrderDAO";
+import ManufacturerDashboard from "./ManufacturerDashboard";
 import {
   Card,
   CardContent,
@@ -180,10 +181,10 @@ export default function ManufacturerHomePage() {
       <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
         <div className='flex flex-col space-y-2'>
           <h1 className='text-3xl font-bold tracking-tight'>
-            Production Queue
+            Production Dashboard
           </h1>
           <p className='text-muted-foreground'>
-            New production requests awaiting your review and acceptance.
+            Overview of your manufacturing performance and active queue.
           </p>
         </div>
         <Link href='/home/orders'>
@@ -192,6 +193,17 @@ export default function ManufacturerHomePage() {
             View Order History
           </Button>
         </Link>
+      </div>
+
+      {user?.id && <ManufacturerDashboard manufacturerId={user.id} />}
+
+      <Separator />
+
+      <div className='flex flex-col space-y-2'>
+        <h2 className='text-3xl font-bold tracking-tight'>Production Queue</h2>
+        <p className='text-muted-foreground'>
+          New production requests awaiting your review and acceptance.
+        </p>
       </div>
 
       {subOrders.length === 0 ? (
@@ -363,7 +375,7 @@ export default function ManufacturerHomePage() {
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2'>
               <Package className='h-5 w-5' />
-              Order Details - #{selectedOrder?.id.slice(0, 8)}
+              Order Details - #{selectedOrder?.id?.slice(0, 8)}
             </DialogTitle>
             <DialogDescription>
               Full information about the sub-order and associated brand.
@@ -384,7 +396,7 @@ export default function ManufacturerHomePage() {
                           Brand Partner
                         </span>
                         <span className='text-sm font-bold'>
-                          {selectedOrder.order.brand.user.id}
+                          {selectedOrder?.order?.brand?.user?.id}
                         </span>
                       </div>
                     </div>
@@ -426,9 +438,8 @@ export default function ManufacturerHomePage() {
                     Specification
                   </h3>
                   <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2'>
-                    {/* @ts-ignore */}
-                    {typeof selectedOrder.details === "object" &&
-                    selectedOrder.details !== null ? (
+                    {typeof selectedOrder?.details === "object" &&
+                    selectedOrder?.details !== null ? (
                       Object.entries(
                         selectedOrder.details as Record<string, any>,
                       ).map(([key, value]) => (
@@ -447,7 +458,7 @@ export default function ManufacturerHomePage() {
                     ) : (
                       <div className='col-span-2 p-4 bg-muted/40 rounded-xl border border-border/50'>
                         <p className='text-sm'>
-                          {String(selectedOrder.details)}
+                          {String(selectedOrder?.details)}
                         </p>
                       </div>
                     )}
@@ -463,7 +474,7 @@ export default function ManufacturerHomePage() {
                   <div className='space-y-4'>
                     {selectedOrder.note ? (
                       <div className='bg-primary/5 p-4 rounded-lg border border-primary/10'>
-                        <p className='text-sm'>{selectedOrder.note}</p>
+                        <p className='text-sm'>{selectedOrder?.note}</p>
                       </div>
                     ) : (
                       <p className='text-sm text-muted-foreground italic'>
@@ -478,7 +489,7 @@ export default function ManufacturerHomePage() {
                             Rejection Reason:
                           </p>
                           <p className='text-sm'>
-                            {selectedOrder.rejectionReason}
+                            {selectedOrder?.rejectionReason}
                           </p>
                         </div>
                       )}
@@ -494,7 +505,9 @@ export default function ManufacturerHomePage() {
                         />
                         <Button
                           variant='secondary'
-                          onClick={() => handleAddNote(selectedOrder.id)}
+                          onClick={() =>
+                            selectedOrder && handleAddNote(selectedOrder.id)
+                          }
                         >
                           Save Note
                         </Button>

@@ -65,3 +65,53 @@ export async function deleteSubOrder(subOrderId: string) {
     where: { id: subOrderId },
   });
 }
+export async function getManufacturerDashboardData(manufacturerId: string) {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const subOrders = await prisma.subOrder.findMany({
+    where: {
+      manufacturerId,
+      createdAt: {
+        gte: thirtyDaysAgo,
+      },
+    },
+    select: {
+      createdAt: true,
+      status: true,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  // Group by date and status
+  const groupedData: Record<
+    string,
+    { accepted: number; rejected: number; total: number }
+  > = {};
+
+  // Initialize last 30 days with 0s
+  for (let i = 0; i <= 30; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split("T")[0];
+    groupedData[dateStr] = { accepted: 0, rejected: 0, total: 0 };
+  }
+
+  subOrders.forEach((so) => {
+    const dateStr = so.createdAt.toISOString().split("T")[0];
+    if (groupedData[dateStr]) {
+      groupedData[dateStr].total++;
+      if (so.status === "ACCEPTED") {
+        groupedData[dateStr].accepted++;
+      } else if (so.status === "REJECTED") {
+        groupedData[dateStr].rejected++;
+      }
+    }
+  });
+
+  return Object.entries(groupedData)
+    .map(([date, counts]) => ({ date, ...counts }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
