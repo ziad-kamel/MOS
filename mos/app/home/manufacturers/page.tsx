@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   getManufacturers,
   deleteManufacturer,
@@ -115,8 +116,10 @@ export default function ManufacturersPage() {
       );
       setIsRankDialogOpen(false);
       setSelectedManufacturer(null);
+      toast.success("Rank updated successfully");
     } catch (error) {
       console.error("Failed to update rank:", error);
+      toast.error("Failed to update rank");
     } finally {
       setActionLoading(null);
     }
@@ -134,8 +137,10 @@ export default function ManufacturersPage() {
     try {
       await deleteManufacturer(manId);
       setManufacturers((prev) => prev.filter((m) => m.id !== manId));
+      toast.success("Manufacturer deleted successfully");
     } catch (error) {
       console.error("Failed to delete manufacturer:", error);
+      toast.error("Failed to delete manufacturer");
     } finally {
       setActionLoading(null);
     }

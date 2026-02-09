@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   getOrders,
   getAllOrders,
@@ -122,9 +123,13 @@ export default function OrdersPage() {
       if (status === "CANCELLED") {
         setRejectDialogOrder(null);
         setRejectionReason("");
+        toast.success("Order cancelled successfully");
+      } else {
+        toast.success("Order accepted successfully");
       }
     } catch (error) {
       console.error("Failed to update order status:", error);
+      toast.error("Failed to update order status");
     } finally {
       setActionLoading(null);
     }
@@ -142,8 +147,10 @@ export default function OrdersPage() {
     try {
       await deleteOrder(orderId);
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      toast.success("Order deleted successfully");
     } catch (error) {
       console.error("Failed to delete order:", error);
+      toast.error("Failed to delete order");
     } finally {
       setActionLoading(null);
     }
@@ -171,8 +178,10 @@ export default function OrdersPage() {
           })
           .filter((o) => o.subOrders.length > 0),
       );
+      toast.success("Sub-order deleted successfully");
     } catch (error) {
       console.error("Failed to delete sub-order:", error);
+      toast.error("Failed to delete sub-order");
     } finally {
       setActionLoading(null);
     }

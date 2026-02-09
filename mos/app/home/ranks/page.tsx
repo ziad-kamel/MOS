@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   getRanks,
   createRank,
@@ -106,8 +107,10 @@ export default function RanksPage() {
       form.reset();
       const updatedRanks = await getRanks();
       setRanks(updatedRanks);
+      toast.success(`Rank ${editingRank ? "updated" : "created"} successfully`);
     } catch (error: any) {
       setErrorMessage(error.message || "Failed to save rank");
+      toast.error(`Failed to ${editingRank ? "update" : "create"} rank`);
     } finally {
       setActionLoading(null);
     }
@@ -121,8 +124,9 @@ export default function RanksPage() {
     try {
       await deleteRank(id);
       setRanks((prev) => prev.filter((r) => r.id !== id));
+      toast.success("Rank deleted successfully");
     } catch (error: any) {
-      alert(error.message);
+      toast.error(error.message || "Failed to delete rank");
     } finally {
       setActionLoading(null);
     }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { getAdmins, createAdmin, deleteAdmin } from "@/data-acess/DAO/adminDAO";
 import { useUser } from "@/providers/user-provider";
 import {
@@ -83,8 +84,10 @@ export default function AdminsPage() {
       // Refresh list
       const updatedAdmins = await getAdmins();
       setAdmins(updatedAdmins);
+      toast.success("Admin created successfully");
     } catch (error: any) {
       setErrorMessage(error.message || "Failed to create admin");
+      toast.error("Failed to create admin");
     } finally {
       setActionLoading(null);
     }
@@ -102,8 +105,10 @@ export default function AdminsPage() {
     try {
       await deleteAdmin(id);
       setAdmins((prev) => prev.filter((a) => a.user.id !== id));
+      toast.success("Admin deleted successfully");
     } catch (error) {
       console.error("Failed to delete admin:", error);
+      toast.error("Failed to delete admin");
     } finally {
       setActionLoading(null);
     }

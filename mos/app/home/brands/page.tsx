@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   getBrands,
   deleteBrand,
@@ -110,8 +111,10 @@ export default function BrandsPage() {
       );
       setIsRankDialogOpen(false);
       setSelectedBrand(null);
+      toast.success("Rank updated successfully");
     } catch (error) {
       console.error("Failed to update rank:", error);
+      toast.error("Failed to update rank");
     } finally {
       setActionLoading(null);
     }
@@ -129,8 +132,10 @@ export default function BrandsPage() {
     try {
       await deleteBrand(brandId);
       setBrands((prev) => prev.filter((b) => b.id !== brandId));
+      toast.success("Brand deleted successfully");
     } catch (error) {
       console.error("Failed to delete brand:", error);
+      toast.error("Failed to delete brand");
     } finally {
       setActionLoading(null);
     }

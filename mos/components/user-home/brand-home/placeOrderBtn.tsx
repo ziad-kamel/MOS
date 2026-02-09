@@ -21,6 +21,8 @@ import { createOrderSchema } from "@/lib/schemas";
 import { createOrder } from "@/data-acess/DAO/orderDTO";
 import { useUser } from "@/providers/user-provider";
 
+import { toast } from "sonner";
+
 export function PlaceOrderBtn() {
   const { user } = useUser();
   const [subOrders, setSubOrders] = useState<SubOrderData[]>([]);
@@ -62,13 +64,13 @@ export function PlaceOrderBtn() {
           brandId: user?.id || "",
           subOrders: result.data.subOrders,
         });
-        alert("Order created successfully");
+        toast.success("Order created successfully");
         setSubOrders([]);
         setOrderNotes("");
         setOpen(false);
       } catch (error: any) {
         console.error("Order creation failed:", error);
-        alert("Failed to create order: " + (error.message || error));
+        toast.error("Failed to create order: " + (error.message || error));
       }
     };
 
