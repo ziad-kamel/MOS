@@ -161,7 +161,11 @@ export default function ManufacturersPage() {
     }
   };
 
-  if (user?.role !== "ADMIN" && user?.role !== "SUPER_ADMIN") {
+  if (
+    user?.role !== "ADMIN" &&
+    user?.role !== "SUPER_ADMIN" &&
+    user?.role !== "BRAND"
+  ) {
     return <div className='p-8'>Access Denied</div>;
   }
 
@@ -217,24 +221,36 @@ export default function ManufacturersPage() {
                     <div className='p-3 rounded-2xl bg-primary/5 group-hover:bg-primary/10 transition-colors'>
                       <Factory className='w-6 h-6 text-primary' />
                     </div>
-                    <button
-                      onClick={() => {
-                        setSelectedManufacturer(man);
-                        setNewRankId(man.rankId);
-                        setIsRankDialogOpen(true);
-                      }}
-                      className='transition-all hover:scale-105 active:scale-95'
-                    >
+                    {user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" ? (
+                      <button
+                        onClick={() => {
+                          setSelectedManufacturer(man);
+                          setNewRankId(man.rankId);
+                          setIsRankDialogOpen(true);
+                        }}
+                        className='transition-all hover:scale-105 active:scale-95'
+                      >
+                        <CustomBadge
+                          className={cn(
+                            "flex items-center gap-1.5 shadow-sm cursor-pointer hover:shadow-md",
+                            getRankStyles(man.rank.name),
+                          )}
+                        >
+                          <Trophy className='w-3 h-3' />
+                          {man.rank.name}
+                        </CustomBadge>
+                      </button>
+                    ) : (
                       <CustomBadge
                         className={cn(
-                          "flex items-center gap-1.5 shadow-sm cursor-pointer hover:shadow-md",
+                          "flex items-center gap-1.5 shadow-sm",
                           getRankStyles(man.rank.name),
                         )}
                       >
                         <Trophy className='w-3 h-3' />
                         {man.rank.name}
                       </CustomBadge>
-                    </button>
+                    )}
                   </div>
                   <div className='mt-4 space-y-1'>
                     <CardTitle className='text-xl font-bold'>
@@ -247,12 +263,6 @@ export default function ManufacturersPage() {
                 </CardHeader>
 
                 <CardContent className='grow space-y-6 pt-0'>
-                  <div className='flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/20 group-hover:bg-muted/50 transition-colors'>
-                    <Mail className='w-4 h-4 text-muted-foreground' />
-                    <span className='text-sm font-medium truncate'>
-                      {man.user?.email || "No email provided"}
-                    </span>
-                  </div>
                   <div className='space-y-4'>
                     <div className='flex items-start gap-3 p-3 rounded-xl bg-muted/30 border border-border/20 group-hover:bg-muted/50 transition-colors'>
                       <MapPin className='w-4 h-4 text-muted-foreground mt-0.5' />

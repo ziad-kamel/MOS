@@ -54,10 +54,13 @@ export default function ManufacturerDashboard({
         // Format date for display
         const formattedData = chartData.map((d) => ({
           ...d,
-          displayDate: new Date(d.date).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-          }),
+          displayDate: new Date(d.date + "T00:00:00").toLocaleDateString(
+            undefined,
+            {
+              month: "short",
+              day: "numeric",
+            },
+          ),
         }));
         setData(formattedData);
       } catch (error) {

@@ -92,8 +92,9 @@ export async function getManufacturerDashboardData(manufacturerId: string) {
   > = {};
 
   // Initialize last 30 days with 0s
+  const now = new Date();
   for (let i = 0; i <= 30; i++) {
-    const d = new Date();
+    const d = new Date(now);
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split("T")[0];
     groupedData[dateStr] = { accepted: 0, rejected: 0, total: 0 };
