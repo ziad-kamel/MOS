@@ -40,3 +40,19 @@ export const authCheck = async () => {
   const { userData, isAuthorized } = await authorizeUser(supabaseUser.id);
   return { supabaseUser, userData, isAuthorized, isAuthenticated };
 };
+
+// softer check that doesn't redirect
+export const getCurrentUser = async () => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const userData = await prisma.user.findUnique({
+    where: { id: user.id },
+  });
+
+  return { supabaseUser: user, userData };
+};
