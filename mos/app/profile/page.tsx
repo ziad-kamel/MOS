@@ -10,6 +10,12 @@ import {
 import { UserProvider } from "@/providers/user-provider";
 import { getUserData } from "@/data-acess/DAO/userDAO";
 
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Profile',
+};
+
 export default async function profile() {
   const user = await getUserData();
 
