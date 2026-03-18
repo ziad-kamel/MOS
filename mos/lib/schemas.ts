@@ -127,6 +127,12 @@ export const signupSchema = z.object({
 export const updateBrandSchema = brandSchema
   .partial()
   .omit({ id: true, rankId: true });
+
+export const updateUserSchema = z.object({
+  companyName: z.string().optional(),
+  contactInfo: z.any().optional(),
+});
+
 export const createSubOrderSchema = z.object({
   manufacturerId: z.string().uuid("Please select a manufacturer"),
   note: z.string().optional(),
