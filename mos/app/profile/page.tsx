@@ -12,9 +12,6 @@ import {
 import { useUser } from "@/providers/user-provider";
 
 export default function Profile() {
-  const { user } = useUser();
-  console.log("xxxxxxxxxxxxxx", user);
-
   return (
     <div className='flex flex-col min-h-svh w-full items-center justify-center p-6 md:p-10'>
       <div className='flex w-full'>
