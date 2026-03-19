@@ -17,8 +17,16 @@ export const metadata: Metadata = {
 };
 
 export default async function profile() {
-  const user = await getUserData();
-  console.log("xxxxxxxxxxxxxx", user);
+  // const user = await getUserData();
+  // console.log("xxxxxxxxxxxxxx", user);
+  const user = {
+    id: "928c4c69-4db0-4921-892c-56c27823a863",
+    name: "ziad kamell",
+    email: "ziad.mohamed.kamell.184@gmail.com",
+    role: "BRAND",
+    avatar:
+      "https://lh3.googleusercontent.com/a/ACg8ocJlw0pcBD93FWTkJetgbR56okMGmCHXktb6KTgqjnInwCgqggw=s96-c",
+  };
 
   return (
     <div className='flex flex-col min-h-svh w-full items-center justify-center p-6 md:p-10'>
