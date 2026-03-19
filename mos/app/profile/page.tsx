@@ -1,3 +1,5 @@
+"use client";
+
 import ProfileForm from "@/components/profile-form";
 import {
   Breadcrumb,
@@ -7,17 +9,10 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { UserProvider } from "@/providers/user-provider";
-import { getUserData } from "@/data-acess/DAO/userDAO";
+import { useUser } from "@/providers/user-provider";
 
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Profile",
-};
-
-export default async function profile() {
-  const user = await getUserData();
+export default function Profile() {
+  const { user } = useUser();
   console.log("xxxxxxxxxxxxxx", user);
 
   return (
@@ -35,9 +30,7 @@ export default async function profile() {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-      <UserProvider user={user}>
-        <ProfileForm />
-      </UserProvider>
+      <ProfileForm />
     </div>
   );
 }
