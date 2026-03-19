@@ -27,7 +27,7 @@ export default function Profile() {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-      <ProfileForm />
+      {/* <ProfileForm /> */}
     </div>
   );
 }
