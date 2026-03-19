@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  console.log(request.url);
 
   const { error } = await supabase.auth.signOut();
 
