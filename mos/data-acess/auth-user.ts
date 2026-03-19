@@ -36,8 +36,11 @@ export const authorizeUser = async (authenticatedUserId: string) => {
 //if any of them not satisfied it will redirect to login page or welcome page
 export const authCheck = async () => {
   const { supabaseUser, isAuthenticated } = await authenticateUser();
+  console.log("supabaseUser", supabaseUser);
 
   const { userData, isAuthorized } = await authorizeUser(supabaseUser.id);
+  console.log("supabaseUser", supabaseUser);
+
   return { supabaseUser, userData, isAuthorized, isAuthenticated };
 };
 
