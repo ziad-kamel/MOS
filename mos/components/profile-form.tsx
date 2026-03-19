@@ -6,16 +6,11 @@ import { Input } from "@/components/ui/input";
 import { deleteUser } from "@/data-acess/DAO/userDAO";
 
 import { useUser } from "@/providers/user-provider";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Edit, Trash2Icon } from "lucide-react";
 import Image from "next/image";
-import { redirect, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import z from "zod";
+import { useState } from "react";
 
 export default function ProfileForm() {
-  const router = useRouter();
   const { user } = useUser();
   const [edit, setEdit] = useState(true);
 
