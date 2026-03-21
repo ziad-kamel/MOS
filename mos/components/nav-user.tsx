@@ -29,6 +29,7 @@ import {
 import Link from "next/link";
 import { UserRole } from "@/app/generated/prisma";
 import { UserDTO } from "@/data-acess/DAO/userDAO";
+import { signOutUser } from "@/data-acess/auth-user";
 
 export function NavUser({ user }: { user: UserDTO }) {
   const { isMobile } = useSidebar();
@@ -67,7 +68,7 @@ export function NavUser({ user }: { user: UserDTO }) {
             sideOffset={4}
           >
             <DropdownMenuLabel className='p-0 font-normal'>
-              <Link href='/profile' className='w-full flex items-center'>
+              <Link href='/home/profile' className='w-full flex items-center'>
                 <div className='flex items-center gap-2 px-1 py-1.5 text-left text-sm'>
                   <Avatar className='h-8 w-8 rounded-lg'>
                     <AvatarImage
@@ -97,7 +98,7 @@ export function NavUser({ user }: { user: UserDTO }) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <Link href='/profile' className='w-full flex items-center'>
+                <Link href='/home/profile' className='w-full flex items-center'>
                   <UserCircle className='mr-2' />
                   Profile
                 </Link>
@@ -112,11 +113,9 @@ export function NavUser({ user }: { user: UserDTO }) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Link href='/auth/signout' className='w-full flex items-center'>
-                <LogOut className='mr-2' />
-                Sign out
-              </Link>
+            <DropdownMenuItem onClick={() => signOutUser()}>
+              <LogOut className='mr-2' />
+              Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

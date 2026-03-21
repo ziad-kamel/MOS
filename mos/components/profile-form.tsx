@@ -12,7 +12,6 @@ import { useState } from "react";
 
 export default function ProfileForm() {
   const { user } = useUser();
-  const [edit, setEdit] = useState(true);
 
   const handelDelete = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,8 +20,8 @@ export default function ProfileForm() {
   return (
     <div className='flex flex-1 flex-col gap-4 p-4'>
       <div className='flex justify-center items-center '>
-        <div className='flex flex-col gap-4 w-fit bg-secondary rounded-2xl p-15'>
-          <div className='flex items-center gap-4 '>
+        <div className='flex flex-col gap-4 w-xl bg-secondary rounded-2xl p-15'>
+          <div className='flex items-center justify-center gap-4 '>
             <Image
               src={user.avatar || "/icon.jpg"}
               alt='user-profile-image'
@@ -30,9 +29,7 @@ export default function ProfileForm() {
               height={160}
               className='rounded-full'
             />
-            <Button onClick={() => setEdit(!edit)}>
-              <Edit />
-            </Button>
+
             <Button variant={"destructive"} onClick={handelDelete}>
               <Trash2Icon />
             </Button>
@@ -70,26 +67,12 @@ export default function ProfileForm() {
                       id='Name'
                       type='text'
                       placeholder='name'
-                      disabled={edit}
+                      disabled={true}
                       defaultValue={user.name}
                     />
                   </Field>
 
-                  <FieldGroup>
-                    <Field>
-                      <FieldLabel>Role:</FieldLabel>
-                      <Input
-                        id='role'
-                        type='text'
-                        placeholder='01xxxxxxxxx'
-                        disabled={edit}
-                        defaultValue={user.role}
-                      />
-                    </Field>
-                  </FieldGroup>
-                  <Field>
-                    {edit ? <></> : <Button type='submit'>Edit</Button>}
-                  </Field>
+                  <FieldGroup></FieldGroup>
                 </FieldGroup>
               </FieldSet>
             </form>

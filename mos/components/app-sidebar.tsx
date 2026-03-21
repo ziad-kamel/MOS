@@ -20,6 +20,7 @@ import {
   Trophy,
   ShieldXIcon,
   ShieldUser,
+  LogOut,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -35,6 +36,8 @@ import {
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "./ThemeToogleBtn/ThemeToogleBtn";
 import { useUser } from "@/providers/user-provider";
+import { signOutUser } from "@/data-acess/auth-user";
+import { Button } from "./ui/button";
 
 // This is sample data.
 
@@ -92,7 +95,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={data.navMain} groupTitle='Platform' />
       </SidebarContent>
       <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter>
       <SidebarRail />

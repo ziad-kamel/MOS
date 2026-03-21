@@ -1,3 +1,5 @@
+"use server";
+
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
@@ -58,4 +60,10 @@ export const getCurrentUser = async () => {
   });
 
   return { supabaseUser: user, userData };
+};
+
+export const signOutUser = async () => {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect(`${baseURL}/login`);
 };
